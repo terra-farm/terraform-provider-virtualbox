@@ -1,0 +1,16 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+
+    "settings": {
+        "GoSublime": {
+            "env": {
+                "GOPATH": "${project_folder}:${project_folder}/.vendor"
+            }
+        }
+    },
+}
