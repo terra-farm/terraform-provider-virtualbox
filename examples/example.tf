@@ -1,6 +1,7 @@
 
-resource "virtualbox_vm" "node01" {
-    name = "node01"
+resource "virtualbox_vm" "node" {
+    count = 2
+    name = "${format("node-%02d", count.index+1)}"
 
     image = "/Users/cailei/ubuntu-15.04.tar.xz"
     cpus = 2
@@ -16,7 +17,7 @@ resource "virtualbox_vm" "node01" {
     }
 }
 
-output "IP address" {
-    value = "${virtualbox_vm.node01.network_adapter.1.ipv4_address}"
+output "IPAddr" {
+    value = "${element(virtualbox_vm.node.*.network_adapter.1.ipv4_address, 1)}"
 }
 
