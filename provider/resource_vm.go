@@ -543,6 +543,7 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 		}
 		out["type"] = vbox_to_tf_network_type(nic.Network)
 		out["device"] = vbox_to_tf_vdevice(nic.Hardware)
+		out["host_interface"] = nic.HostInterface
 		out["mac_address"] = nic.MacAddr
 		out["status"] = osNic.status
 		out["ipv4_address"] = osNic.ipv4Addr
