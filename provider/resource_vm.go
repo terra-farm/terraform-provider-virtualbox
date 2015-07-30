@@ -10,6 +10,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	vbox "github.com/ccll/go-virtualbox"
@@ -111,6 +112,8 @@ func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	}
 }
 
+var cloneImageMutex sync.Mutex
+
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
 
@@ -158,7 +161,9 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	for _, src := range goldDisks {
 		filename := filepath.Base(src)
 		target := filepath.Join(vm.BaseFolder, filename)
+		cloneImageMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err = vbox.CloneHD(src, target)
+		cloneImageMutex.Unlock()
 		if err != nil {
 			log.Printf("[ERROR] Clone *.vdi and *.vmdk to VM folder: %s", err.Error())
 			return err
