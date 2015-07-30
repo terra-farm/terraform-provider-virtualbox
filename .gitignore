@@ -1,2 +1,4 @@
 .vendor
 *.sublime-workspace
+*.log
+*.tfstate*
