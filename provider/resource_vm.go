@@ -293,6 +293,26 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
+func powerOnAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+	if err := vm.Start(); err != nil {
+		return err
+	}
+
+	return WaitUntilVMIsReady(d, vm, meta)
+}
+
+func powerOffAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+	if err := vm.Stop(); err != nil {
+		return err
+	}
+	_, err := WaitForVMAttribute(d, "poweroff", []string{"running", "paused"}, "status", meta, 0, 1*time.Second)
+	if err != nil {
+		return fmt.Errorf(
+			"Error waiting for VM (%s) to become poweroff: %s", d.Get("name"), err)
+	}
+	return nil
+}
+
 func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
 
@@ -301,15 +321,8 @@ func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	/* Stop VM */
-	err = vm.Stop()
-	if err != nil {
+	if err := powerOffAndWait(d, vm, meta); err != nil {
 		return err
-	}
-	_, err = WaitForVMAttribute(d, "poweroff", []string{"running", "paused"}, "status", meta)
-	if err != nil {
-		return fmt.Errorf(
-			"Error waiting for VM (%s) to become poweroff: %s", d.Get("name"), err)
 	}
 
 	/* Modify VM */
@@ -322,13 +335,7 @@ func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	/* Start VM */
-	err = vm.Start()
-	if err != nil {
-		return err
-	}
-	err = WaitUntilVMIsReady(d, vm, meta)
-	if err != nil {
+	if err := powerOnAndWait(d, vm, meta); err != nil {
 		return err
 	}
 
@@ -351,7 +358,7 @@ func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 			continue
 		}
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d, "yes", []string{"", "no"}, key, meta)
+		_, err = WaitForVMAttribute(d, "yes", []string{"", "no"}, key, meta, 5*time.Second, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf(
 				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
@@ -572,7 +579,7 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 }
 
 func WaitForVMAttribute(
-	d *schema.ResourceData, target string, pending []string, attribute string, meta interface{}) (interface{}, error) {
+	d *schema.ResourceData, target string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
 	// Wait for the droplet so we can get the networking attributes
 	// that show up after a while
 	log.Printf(
@@ -584,8 +591,8 @@ func WaitForVMAttribute(
 		Target:         target,
 		Refresh:        newVMStateRefreshFunc(d, attribute, meta),
 		Timeout:        5 * time.Minute,
-		Delay:          10 * time.Second,
-		MinTimeout:     3 * time.Second,
+		Delay:          delay,
+		MinTimeout:     interval,
 		NotFoundChecks: 60,
 	}
 
