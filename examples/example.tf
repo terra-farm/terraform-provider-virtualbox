@@ -13,7 +13,6 @@ resource "virtualbox_vm" "node01" {
     network_adapter {
         type = "bridged"
         host_interface = "en0"
-        # "en0: 以太网"
     }
 }
 

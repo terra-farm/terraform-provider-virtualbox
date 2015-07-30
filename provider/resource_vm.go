@@ -55,7 +55,8 @@ func resourceVM() *schema.Resource {
 
 			"status": &schema.Schema{
 				Type:     schema.TypeString,
-				Computed: true,
+				Optional: true,
+				Default:  "running",
 			},
 
 			"network_adapter": &schema.Schema{
@@ -99,17 +100,8 @@ func resourceVM() *schema.Resource {
 	}
 }
 
-type VM struct {
-	vbox.Machine
-	Image string
-}
-
 func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	log.Printf("============ Exists")
-	return false, nil
-	uuid := d.Id()
-	_, err := vbox.GetMachine(uuid)
-	log.Printf("SHIT FUCK")
+	_, err := vbox.GetMachine(d.Id())
 	if err == nil {
 		return true, nil
 	} else if err == vbox.ErrMachineNotExist {
@@ -234,24 +226,8 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	return resourceVMRead(d, meta)
 }
 
-func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("============ Read")
-	vm, err := vbox.GetMachine(d.Id())
-	if err != nil {
-		/* VM no longer exist */
-		if err == vbox.ErrMachineNotExist {
-			d.SetId("")
-			return nil
-		}
-		return err
-	}
-
-	d.Set("name", vm.Name)
-	d.Set("cpus", vm.CPUs)
-	bytes := uint64(vm.Memory) * humanize.MiByte
-	repr := humanize.IBytes(bytes)
-	d.Set("memory", strings.ToLower(repr))
-	switch vm.State {
+func setState(d *schema.ResourceData, state vbox.MachineState) {
+	switch state {
 	case vbox.Poweroff:
 		d.Set("status", "poweroff")
 	case vbox.Running:
@@ -263,6 +239,30 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	case vbox.Aborted:
 		d.Set("status", "aborted")
 	}
+}
+
+func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
+	vm, err := vbox.GetMachine(d.Id())
+	if err != nil {
+		/* VM no longer exist */
+		if err == vbox.ErrMachineNotExist {
+			d.SetId("")
+			return nil
+		}
+		return err
+	}
+
+	if vm.State != vbox.Running {
+		setState(d, vm.State)
+		return nil
+	}
+
+	setState(d, vm.State)
+	d.Set("name", vm.Name)
+	d.Set("cpus", vm.CPUs)
+	bytes := uint64(vm.Memory) * humanize.MiByte
+	repr := humanize.IBytes(bytes)
+	d.Set("memory", strings.ToLower(repr))
 
 	err = net_vbox_to_tf(vm, d)
 	if err != nil {
@@ -497,34 +497,37 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 	}
 	osNicMap := make(map[string]OsNicData) // map from MAC address to data
 
-	/* Collect NIC data from guest OS */
 	var errs []error
-	for i := 0; i < len(vm.NICs); i++ {
-		var osNic OsNicData
 
-		/* NIC MAC address */
-		macAddr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
-		if err != nil {
-			errs = append(errs, err)
-			continue
+	/* Collect NIC data from guest OS, available only when VM is running */
+	if vm.State == vbox.Running {
+		for i := 0; i < len(vm.NICs); i++ {
+			var osNic OsNicData
+
+			/* NIC MAC address */
+			macAddr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			/* NIC status */
+			osNic.status, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+			osNic.status = strings.ToLower(osNic.status)
+
+			/* NIC ipv4 address */
+			osNic.ipv4Addr, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			osNicMap[macAddr] = osNic
 		}
-
-		/* NIC status */
-		osNic.status, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-		osNic.status = strings.ToLower(osNic.status)
-
-		/* NIC ipv4 address */
-		osNic.ipv4Addr, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		osNicMap[macAddr] = osNic
 	}
 
 	if len(errs) > 0 {
@@ -536,21 +539,25 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 	for _, nic := range vm.NICs {
 		out := make(map[string]interface{})
 
-		osNic, ok := osNicMap[nic.MacAddr]
-		if !ok {
-			errs = append(errs, fmt.Errorf("Could not find MAC address '%s' in guest OS", nic.MacAddr))
-			continue
-		}
 		out["type"] = vbox_to_tf_network_type(nic.Network)
 		out["device"] = vbox_to_tf_vdevice(nic.Hardware)
 		out["host_interface"] = nic.HostInterface
 		out["mac_address"] = nic.MacAddr
-		out["status"] = osNic.status
-		out["ipv4_address"] = osNic.ipv4Addr
-		if osNic.ipv4Addr == "" {
-			out["ipv4_address_available"] = "no"
-		} else {
-			out["ipv4_address_available"] = "yes"
+
+		/* Attributes only available when VM is running */
+		if vm.State == vbox.Running {
+			osNic, ok := osNicMap[nic.MacAddr]
+			if !ok {
+				errs = append(errs, fmt.Errorf("Could not find MAC address '%s' in guest OS", nic.MacAddr))
+				continue
+			}
+			out["status"] = osNic.status
+			out["ipv4_address"] = osNic.ipv4Addr
+			if osNic.ipv4Addr == "" {
+				out["ipv4_address_available"] = "no"
+			} else {
+				out["ipv4_address_available"] = "yes"
+			}
 		}
 
 		nics = append(nics, out)
@@ -593,11 +600,8 @@ func newVMStateRefreshFunc(
 			return nil, "", err
 		}
 
-		attr := d.Get(attribute)
-		log.Printf("=============== Refresh state '%s' : '%s'\n", attribute, attr.(string))
-
 		// See if we can access our attribute
-		if attr := d.Get(attribute); attr != "" {
+		if attr, ok := d.GetOk(attribute); ok {
 			// Retrieve the VM properties
 			vm, err := vbox.GetMachine(d.Id())
 			if err != nil {
