@@ -94,5 +94,4 @@ output "IPAddr" {
 - [ ] Validate downloaded image against checksum.
 - [ ] Download the same image only once (based on checksum).
 - [ ] Re-download corrupted image (based on checksum).
-- [ ] Validate 'network_adapter.#.host_interface'. Currently the VM will fail to boot if 'host_interface' is empty or invalid.
-- [ ] Eliminate the requirement to explictly set 'host_interface' in config file. For now the 'host_interface' must be specified in 'hostonly' and 'bridged' network, and must reference a valid host interface, otherwise the VM will refuse to boot. This is bad for team collaboration as the host interface names are often different on different machines. A more robust approach is to enumerate all host interfaces and automatically assign one (maybe based on default routing information?) if not specified explicitly.
+- [ ] Eliminate the mandatory usage of 'host_interface' in config file. For now the 'host_interface' must be specified in 'hostonly' and 'bridged' network, and must reference a valid host interface, otherwise the VM will refuse to boot. This is bad for team collaboration as the host interface names are often different on different machines. A more robust approach is to enumerate all host interfaces and automatically assign one (maybe based on default routing information?) if not specified explicitly.
