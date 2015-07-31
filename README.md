@@ -84,6 +84,7 @@ output "IPAddr" {
 
 - An image file is a tarball file in format '.tar.gz', '.tar.bz2' or '.tar.xz'.
 - An image tarball should contain atleast one virtual disk files, for now only ".vdi' and '.vmdk' is supported. You can run 'VBoxManage clonehd' to convert formats.
+- '.vbox' files is ignored as we are creating a brand new VM instead of cloning from existing one, so you can avoid packing them into the image. There might be a small chance your image will not work in the newly created VM if some spec flags varies greatly, but as long as you make your image in a VM created with default flags, things should work smoothly.
 - All virtual disk files in the image will be attached to the same SATA controller in **alphabet** order, so name them properly before making the tarball.
 - VirtualBox Guest Addition **must** be installed and running in the guest OS, as the IP address is retrieved via it. If you have a better approach which does not require Guest Addition, please write to me, or better, send a PR.
 
