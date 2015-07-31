@@ -2,8 +2,6 @@
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
-# Status
-
 # Resources
 
 ## "virtualbox_vm"
