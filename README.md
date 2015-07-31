@@ -21,7 +21,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 
 ## "virtualbox_vm"
 
-### Attributes
+### Schema
 
 - `name`, string, required: The name of the virtual machine.
 - `image`, string, required: The url of the image file.
