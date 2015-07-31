@@ -23,7 +23,7 @@ func init() {
 
 func resourceVM() *schema.Resource {
 	return &schema.Resource{
-		// Exists: resourceVMExists,
+		Exists: resourceVMExists,
 		Create: resourceVMCreate,
 		Read:   resourceVMRead,
 		Update: resourceVMUpdate,
