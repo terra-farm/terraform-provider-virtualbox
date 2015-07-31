@@ -37,7 +37,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
   - `.#.ipv4_address`, string, computed: The IPv4 address assigned to the adapter.
   - `.#.ipv4_address_available`, string, computed: Wheather or not an IPv4 address is actaully assigned to the adapter, possible values: "yes", "no".
 
-### Network types
+### Network adapter types
 - [x] NAT
 - [x] bridged
 - [ ] Hostonly  (not tested, probably can work)
