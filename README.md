@@ -28,7 +28,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
 - `status`, string, optional, default="running": The status of the VM, allowed values: 'poweroff', 'running'. This value will be updated at runtime to reflect the real status of the VM, and you can also specify it explicitly in config to manually control the status of the VM. This value defaults to 'running', so `terraform apply` will always try to keep the VM running if not specified otherwise.
-- `network_adapter` - list: The network adapters in the VM, you can have up to 4 adapters.
+- `network_adapter`, list: The network adapters in the VM, you can have up to 4 adapters.
   - `.#.type`, string, requried: The type of the network, allowed values: 'nat', 'bridged', 'hostonly', 'internal', 'generic'.
   - `.#.device`, string, optional, default="IntelPro1000MTServer": The type of the virtual hardware device, allowed values: 'PCIII', 'FASTIII', 'IntelPro1000MTDesktop', 'IntelPro1000TServer', 'IntelPro1000MTServer'.
   - `.#.host_interface`, string, optional: Some network type (hostonly, bridged, etc) must bind to a host interface to work properly, use this field to specify the name of the host interface.
