@@ -60,6 +60,11 @@ func resourceVM() *schema.Resource {
 				Default:  "running",
 			},
 
+			"user_data": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+
 			"network_adapter": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
@@ -269,6 +274,14 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	repr := humanize.IBytes(bytes)
 	d.Set("memory", strings.ToLower(repr))
 
+	userData, err := vm.GetExtraData("user_data")
+	if err != nil {
+		return err
+	}
+	if userData != nil && *userData != "" {
+		d.Set("user_data", *userData)
+	}
+
 	err = net_vbox_to_tf(vm, d)
 	if err != nil {
 		return err
@@ -388,6 +401,10 @@ func tf_to_vbox(d *schema.ResourceData, vm *vbox.Machine) error {
 		vbox.F_vtxvpid | vbox.F_vtxux
 	vm.BootOrder = []string{"disk", "none", "none", "none"}
 	vm.NICs, err = net_tf_to_vbox(d)
+	userData := d.Get("user_data").(string)
+	if userData != "" {
+		err = vm.SetExtraData("user_data", userData)
+	}
 	return err
 }
 

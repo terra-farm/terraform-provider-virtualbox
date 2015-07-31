@@ -7,6 +7,8 @@ resource "virtualbox_vm" "node" {
     cpus = 2
     memory = "512mib"
 
+    user_data = "${file("examples/user_data")}"
+
     network_adapter {
         type = "nat"
     }
