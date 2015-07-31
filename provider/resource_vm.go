@@ -522,23 +522,33 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 				errs = append(errs, err)
 				continue
 			}
+			if macAddr == nil || *macAddr == "" {
+				return nil
+			}
 
 			/* NIC status */
-			osNic.status, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
+			status, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			osNic.status = strings.ToLower(osNic.status)
+			if status == nil || *status == "" {
+				return nil
+			}
+			osNic.status = strings.ToLower(*status)
 
 			/* NIC ipv4 address */
-			osNic.ipv4Addr, err = vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
+			ipv4Addr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
+			if ipv4Addr == nil || *ipv4Addr == "" {
+				return nil
+			}
+			osNic.ipv4Addr = *ipv4Addr
 
-			osNicMap[macAddr] = osNic
+			osNicMap[*macAddr] = osNic
 		}
 	}
 
@@ -560,8 +570,7 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 		if vm.State == vbox.Running {
 			osNic, ok := osNicMap[nic.MacAddr]
 			if !ok {
-				errs = append(errs, fmt.Errorf("Could not find MAC address '%s' in guest OS", nic.MacAddr))
-				continue
+				return nil
 			}
 			out["status"] = osNic.status
 			out["ipv4_address"] = osNic.ipv4Addr
@@ -575,10 +584,6 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 		nics = append(nics, out)
 	}
 	d.Set("network_adapter", nics)
-
-	if len(errs) > 0 {
-		return &multierror.Error{Errors: errs}
-	}
 
 	return nil
 }
