@@ -80,7 +80,7 @@ output "IPAddr" {
 
 - [ubuntu-15.04](https://github.com/ccll/terraform-provider-virtualbox-images/releases/tag/ubuntu-15.04)
 
-# How to make a image
+# How to make an image
 
 - An image file is a tarball file in format '.tar.gz', '.tar.bz2' or '.tar.xz'.
 - An image tarball should contain atleast one virtual disk files, for now only ".vdi' and '.vmdk' is supported. You can run 'VBoxManage clonehd' to convert formats.
