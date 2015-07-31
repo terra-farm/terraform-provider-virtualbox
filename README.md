@@ -8,11 +8,11 @@ Download prebuilt binaries from [Releases](https://github.com/ccll/terraform-pro
 
 # How to build from source
 
-1. Make sure you've got `goop` installed, we are using goop to lock the version of dependencies. `go get -v github.com/nitrous-io/goop`
+1. Make sure you've got [goop](https://github.com/nitrous-io/goop) installed, we are using goop to lock the version of dependencies. `go get -v github.com/nitrous-io/goop`
 2. `git clone https://github.com/ccll/terraform-provider-virtualbox.git`
 3. Run `goop install` in the cloned repo to install all dependencies.
 4. `goop go build` to build this plugin.
-5. `goop go install` to install the plugin binary at `.vendor/bin/terraform-provider-virtualbox`.
+5. `goop go install` to install the plugin binary at `.vendor/bin/terraform-provider-virtualbox`. If you are cross-compiling with tools like [gox](https://github.com/mitchellh/gox), run `goop exec gox`, check goop documentation for details.
 6. Copy `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
 
 # Resources
