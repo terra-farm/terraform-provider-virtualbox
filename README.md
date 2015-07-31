@@ -2,7 +2,11 @@
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
-# How to build and install
+# How to install
+
+Download prebuilt binaries from [Releases](https://github.com/ccll/terraform-provider-virtualbox/releases)
+
+# How to build from source
 
 1. Make sure you've got `goop` installed, we are using goop to lock the version of dependencies. `go get -v github.com/nitrous-io/goop`
 2. `git clone https://github.com/ccll/terraform-provider-virtualbox.git`
