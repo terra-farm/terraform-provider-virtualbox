@@ -90,6 +90,7 @@ output "IPAddr" {
 
 # TODO
 
+- [ ] Optimize resourceVMUpdate(), eliminate unneccessary restarts of VM.
 - [ ] Auto download image from remote url.
 - [ ] Validate downloaded image against checksum.
 - [ ] Download the same image only once (based on checksum).
