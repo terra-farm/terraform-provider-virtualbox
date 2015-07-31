@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew/spew
 github.com/smartystreets/goconvey
 github.com/dustin/go-humanize
-github.com/riobard/go-virtualbox
+github.com/ccll/go-virtualbox
 github.com/hashicorp/terraform #v0.6.0
 code.google.com/p/go-uuid/uuid #35bc42037350f0078e3c974c6ea690f1926603ab
 code.google.com/p/gosshold #9dd3b6b6e7b3e1b7f30c2b58c5ec5fff6bf9feff
