@@ -4,9 +4,9 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 
 # How to install
 
-1. Download prebuilt binary from [Releases](https://github.com/ccll/terraform-provider-virtualbox/releases)
-2. Rename binary to `terraform-provider-virtualbox`.
-3. Copy `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
+1. Download prebuilt binaries from [Releases](https://github.com/ccll/terraform-provider-virtualbox/releases).
+2. Rename binary file to `terraform-provider-virtualbox`.
+3. Copy the `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
 
 # How to build from source
 
@@ -15,7 +15,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 3. Run `goop install` in the cloned repo to install all dependencies.
 4. `goop go build` to build this plugin.
 5. `goop go install` to install the plugin binary at `.vendor/bin/terraform-provider-virtualbox`. If you are cross-compiling with tools like [gox](https://github.com/mitchellh/gox), run `goop exec gox`, check goop documentation for details.
-6. Copy `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
+6. Copy the `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
 
 # Resources
 
