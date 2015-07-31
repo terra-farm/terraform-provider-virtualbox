@@ -15,12 +15,6 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 
 ## "virtualbox_vm"
 
-### CRUD
-- [x] resourceCreate
-- [x] resourceRead
-- [x] resourceUpdate
-- [x] resourceDelete
-
 ### Attributes
 
 - `name`, string, required: The name of the virtual machine.
