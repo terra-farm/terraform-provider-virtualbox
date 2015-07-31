@@ -4,7 +4,9 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 
 # How to install
 
-Download prebuilt binaries from [Releases](https://github.com/ccll/terraform-provider-virtualbox/releases)
+1. Download prebuilt binary from [Releases](https://github.com/ccll/terraform-provider-virtualbox/releases)
+2. Rename binary to `terraform-provider-virtualbox`.
+3. Copy `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
 
 # How to build from source
 
