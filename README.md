@@ -2,6 +2,15 @@
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
+# How to build and install
+
+1. Make sure you've got `goop` installed, we are using goop to lock the version of dependencies. `go get -v github.com/nitrous-io/goop`
+2. `git clone https://github.com/ccll/terraform-provider-virtualbox.git`
+3. Run `goop install` in the cloned repo to install all dependencies.
+4. `goop go build` to build this plugin.
+5. `goop go install` to install the plugin binary at `.vendor/bin/terraform-provider-virtualbox`.
+6. Copy `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
+
 # Resources
 
 ## "virtualbox_vm"
@@ -15,7 +24,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 ### Attributes
 
 - `name`, string, required: The name of the virtual machine.
-- `image`, string, required: The url of the image file. (TO BE EXPLAINED MORE)
+- `image`, string, required: The url of the image file.
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
 - `status`, string, optional, default="running": The status of the VM, allowed values: 'poweroff', 'running'. This value will be updated at runtime to reflect the real status of the VM, and you can also specify it explicitly in config to manually control the status of the VM. This value defaults to 'running', so `terraform apply` will always try to keep the VM running if not specified otherwise.
