@@ -363,7 +363,7 @@ func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 			continue
 		}
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d, "yes", []string{"", "no"}, key, meta, 10*time.Second, 3*time.Second)
+		_, err = WaitForVMAttribute(d, "yes", []string{"", "no"}, key, meta, 3*time.Second, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf(
 				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
