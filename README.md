@@ -27,6 +27,7 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 - `image`, string, required: The url of the image file.
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
+- `user_data`, string, optional, default="": User defined data.
 - `status`, string, optional, default="running": The status of the VM, allowed values: 'poweroff', 'running'. This value will be updated at runtime to reflect the real status of the VM, and you can also specify it explicitly in config to manually control the status of the VM. This value defaults to 'running', so `terraform apply` will always try to keep the VM running if not specified otherwise.
 - `network_adapter`, list: The network adapters in the VM, you can have up to 4 adapters.
   - `.#.type`, string, requried: The type of the network, allowed values: 'nat', 'bridged', 'hostonly', 'internal', 'generic'.
