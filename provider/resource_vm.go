@@ -107,17 +107,19 @@ func resourceVM() *schema.Resource {
 }
 
 func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	_, err := vbox.GetMachine(d.Id())
+	name := d.Get("name").(string)
+	_, err := vbox.GetMachine(name)
 	if err == nil {
 		return true, nil
 	} else if err == vbox.ErrMachineNotExist {
 		return false, nil
 	} else {
+		log.Printf("[ERROR] Checking existence of VM '%s'\n", name)
 		return false, err
 	}
 }
 
-var cloneImageMutex sync.Mutex
+var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
@@ -136,6 +138,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	os.MkdirAll(machineFolder, 0740)
 
 	/* Unpack gold image to gold folder */
+	imageOpMutex.Lock() // Sequentialize image unpacking to avoid conflicts
 	goldFileName := filepath.Base(image)
 	goldName := strings.TrimSuffix(goldFileName, filepath.Ext(goldFileName))
 	if filepath.Ext(goldName) == ".tar" {
@@ -145,8 +148,10 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	err = unpackImage(image, goldPath)
 	if err != nil {
 		log.Printf("[ERROR] Unpack image %s: %s", image, err.Error())
+		imageOpMutex.Unlock()
 		return err
 	}
+	imageOpMutex.Unlock()
 
 	/* Gather '*.vdi' and "*.vmdk" files from gold */
 	goldDisks, err := gatherDisks(goldPath)
@@ -166,9 +171,9 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	for _, src := range goldDisks {
 		filename := filepath.Base(src)
 		target := filepath.Join(vm.BaseFolder, filename)
-		cloneImageMutex.Lock() // Sequentialize image cloning to improve disk performance
+		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err = vbox.CloneHD(src, target)
-		cloneImageMutex.Unlock()
+		imageOpMutex.Unlock()
 		if err != nil {
 			log.Printf("[ERROR] Clone *.vdi and *.vmdk to VM folder: %s", err.Error())
 			return err
