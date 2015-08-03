@@ -267,10 +267,10 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if vm.State != vbox.Running {
-		setState(d, vm.State)
-		return nil
-	}
+	// if vm.State != vbox.Running {
+	// 	setState(d, vm.State)
+	// 	return nil
+	// }
 
 	setState(d, vm.State)
 	d.Set("name", vm.Name)
@@ -523,18 +523,18 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 		}
 	}
 
-	/* NICs in guest OS (eth0, eth1, etc) does not neccessarily have save
-	order as in VirtualBox (nic1, nic2, etc), so we use MAC address to setup a mapping */
-	type OsNicData struct {
-		ipv4Addr string
-		status   string
-	}
-	osNicMap := make(map[string]OsNicData) // map from MAC address to data
-
-	var errs []error
-
 	/* Collect NIC data from guest OS, available only when VM is running */
 	if vm.State == vbox.Running {
+		/* NICs in guest OS (eth0, eth1, etc) does not neccessarily have save
+		order as in VirtualBox (nic1, nic2, etc), so we use MAC address to setup a mapping */
+		type OsNicData struct {
+			ipv4Addr string
+			status   string
+		}
+		osNicMap := make(map[string]OsNicData) // map from MAC address to data
+
+		var errs []error
+
 		for i := 0; i < len(vm.NICs); i++ {
 			var osNic OsNicData
 
@@ -572,24 +572,22 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 			osNicMap[*macAddr] = osNic
 		}
-	}
 
-	if len(errs) > 0 {
-		return &multierror.Error{Errors: errs}
-	}
+		if len(errs) > 0 {
+			return &multierror.Error{Errors: errs}
+		}
 
-	/* Assign NIC property to vbox structure and Terraform */
-	nics := make([]map[string]interface{}, 0, 1)
-	for _, nic := range vm.NICs {
-		out := make(map[string]interface{})
+		/* Assign NIC property to vbox structure and Terraform */
+		nics := make([]map[string]interface{}, 0, 1)
 
-		out["type"] = vbox_to_tf_network_type(nic.Network)
-		out["device"] = vbox_to_tf_vdevice(nic.Hardware)
-		out["host_interface"] = nic.HostInterface
-		out["mac_address"] = nic.MacAddr
+		for _, nic := range vm.NICs {
+			out := make(map[string]interface{})
 
-		/* Attributes only available when VM is running */
-		if vm.State == vbox.Running {
+			out["type"] = vbox_to_tf_network_type(nic.Network)
+			out["device"] = vbox_to_tf_vdevice(nic.Hardware)
+			out["host_interface"] = nic.HostInterface
+			out["mac_address"] = nic.MacAddr
+
 			osNic, ok := osNicMap[nic.MacAddr]
 			if !ok {
 				return nil
@@ -601,11 +599,24 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 			} else {
 				out["ipv4_address_available"] = "yes"
 			}
+
+			nics = append(nics, out)
 		}
 
-		nics = append(nics, out)
+		d.Set("network_adapter", nics)
+	} else {
+		nics, ok := d.Get("network_adapter").([]map[string]interface{})
+		if ok && len(nics) > 0 {
+			for _, nic := range nics {
+				nic["status"] = "down"
+				nic["ipv4_address"] = ""
+				nic["ipv4_address_available"] = "no"
+			}
+			d.Set("network_adapter", nics)
+		} else {
+			d.Set("network_adapter", nil)
+		}
 	}
-	d.Set("network_adapter", nics)
 
 	return nil
 }
