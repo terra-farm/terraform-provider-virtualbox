@@ -63,6 +63,7 @@ func resourceVM() *schema.Resource {
 			"user_data": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
+				Default:  "",
 			},
 
 			"network_adapter": &schema.Schema{
@@ -324,18 +325,6 @@ func powerOnAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) 
 	return WaitUntilVMIsReady(d, vm, meta)
 }
 
-func powerOffAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
-	if err := vm.Stop(); err != nil {
-		return err
-	}
-	_, err := WaitForVMAttribute(d, "poweroff", []string{"running", "paused"}, "status", meta, 0, 1*time.Second)
-	if err != nil {
-		return fmt.Errorf(
-			"Error waiting for VM (%s) to become poweroff: %s", d.Get("name"), err)
-	}
-	return nil
-}
-
 func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
 
@@ -344,7 +333,7 @@ func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if err := powerOffAndWait(d, vm, meta); err != nil {
+	if err := vm.Stop(); err != nil {
 		return err
 	}
 
@@ -605,17 +594,25 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 		d.Set("network_adapter", nics)
 	} else {
-		nics, ok := d.Get("network_adapter").([]map[string]interface{})
-		if ok && len(nics) > 0 {
-			for _, nic := range nics {
-				nic["status"] = "down"
-				nic["ipv4_address"] = ""
-				nic["ipv4_address_available"] = "no"
-			}
-			d.Set("network_adapter", nics)
-		} else {
-			d.Set("network_adapter", nil)
+		/* Assign NIC property to vbox structure and Terraform */
+		nics := make([]map[string]interface{}, 0, 1)
+
+		for _, nic := range vm.NICs {
+			out := make(map[string]interface{})
+
+			out["type"] = vbox_to_tf_network_type(nic.Network)
+			out["device"] = vbox_to_tf_vdevice(nic.Hardware)
+			out["host_interface"] = nic.HostInterface
+			out["mac_address"] = nic.MacAddr
+
+			out["status"] = "down"
+			out["ipv4_address"] = ""
+			out["ipv4_address_available"] = "no"
+
+			nics = append(nics, out)
 		}
+
+		d.Set("network_adapter", nics)
 	}
 
 	return nil
