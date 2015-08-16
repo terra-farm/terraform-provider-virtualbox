@@ -333,7 +333,7 @@ func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if err := vm.Stop(); err != nil {
+	if err := vm.Poweroff(); err != nil {
 		return err
 	}
 
