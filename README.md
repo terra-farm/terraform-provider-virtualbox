@@ -1,3 +1,5 @@
+**[This project is not actively maintained, someone please take over it]**
+
 # VirtualBox provider for Terraform
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
