@@ -3,11 +3,11 @@ resource "virtualbox_vm" "node" {
     count = 2
     name = "${format("node-%02d", count.index+1)}"
 
-    image = "/Users/cailei/ubuntu-15.04.tar.xz"
+    image = "./ubuntu-15.04.tar.xz"
     cpus = 2
     memory = "512mib"
 
-    user_data = "${file("examples/user_data")}"
+    user_data = "${file("user_data")}"
 
     network_adapter {
         type = "nat"

@@ -1,3 +1,5 @@
+# v.0.1.1.1
+- Add support for Terraform v0.9.5
 # v0.1.1
 
 - Add new optional field "user_data" in schema, accepts arbitary string, your VM specific configuration can be stored here.

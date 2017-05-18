@@ -3,7 +3,6 @@ package provider
 import (
 	"fmt"
 	"github.com/dustin/go-humanize"
-	"github.com/hashicorp/terraform/helper/multierror"
 	"github.com/hashicorp/terraform/helper/resource"
 	"log"
 	"os"
@@ -15,6 +14,7 @@ import (
 
 	vbox "github.com/ccll/go-virtualbox"
 	"github.com/hashicorp/terraform/helper/schema"
+	multierror "github.com/hashicorp/go-multierror"
 )
 
 func init() {
@@ -370,7 +370,7 @@ func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 			continue
 		}
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d, "yes", []string{"", "no"}, key, meta, 3*time.Second, 3*time.Second)
+		_, err = WaitForVMAttribute(d,[]string{"yes"}, []string{"", "no"}, key, meta, 3*time.Second, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf(
 				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
@@ -619,7 +619,7 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 }
 
 func WaitForVMAttribute(
-	d *schema.ResourceData, target string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
+	d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
 	// Wait for the droplet so we can get the networking attributes
 	// that show up after a while
 	log.Printf(

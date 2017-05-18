@@ -2,3 +2,10 @@
 *.sublime-workspace
 *.log
 *.tfstate*
+/examples/terraform.tfstate
+/examples/terraform.tfstate.backup
+/examples/terraform-provider-virtualbox
+/examples/ubuntu-15.04.tar.xz
+/provider/testdata/
+/terraform-provider-virtualbox
+.idea/
