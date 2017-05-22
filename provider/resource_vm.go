@@ -12,9 +12,16 @@ import (
 	"sync"
 	"time"
 
-	vbox "github.com/ccll/go-virtualbox"
+	vbox "github.com/pyToshka/go-virtualbox"
 	"github.com/hashicorp/terraform/helper/schema"
 	multierror "github.com/hashicorp/go-multierror"
+	"os/exec"
+	"runtime"
+	"io"
+	"net/http"
+)
+var (
+	VBM     string // Path to VBoxManage utility.
 )
 
 func init() {
@@ -39,6 +46,11 @@ func resourceVM() *schema.Resource {
 			"image": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"url": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -124,7 +136,27 @@ var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
-
+	if len(d.Get("url").(string)) > 0 {
+		path := d.Get("image").(string)
+		url:= d.Get("url").(string)
+		// Create the file
+		out, err := os.Create(path)
+		if err != nil  {
+			return err
+		}
+		defer out.Close()
+		// Get the data
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		// Writer the body to file
+		_, err = io.Copy(out, resp.Body)
+		if err != nil  {
+			return err
+		}
+	}
 	image := d.Get("image").(string)
 
 	/* Get gold folder and machine folder */
@@ -171,7 +203,14 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* Clone gold virtual disk files to VM folder */
 	for _, src := range goldDisks {
 		filename := filepath.Base(src)
+
 		target := filepath.Join(vm.BaseFolder, filename)
+		VBM = "VBoxManage"
+		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
+			VBM = filepath.Join(p, "VBoxManage.exe")
+		}
+		setuiid := exec.Command(VBM + "internalcommands sethduuid " +src)
+		err := setuiid.Run()
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err = vbox.CloneHD(src, target)
 		imageOpMutex.Unlock()
@@ -370,7 +409,7 @@ func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 			continue
 		}
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d,[]string{"yes"}, []string{"", "no"}, key, meta, 3*time.Second, 3*time.Second)
+		_, err = WaitForVMAttribute(d,[]string{"yes"}, []string{"no"}, key, meta, 3*time.Second, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf(
 				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
@@ -618,6 +657,25 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 	return nil
 }
 
+//func WaitForVMAttribute(d *schema.ResourceData, target string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
+//	// Wait for the droplet so we can get the networking attributes
+//	// that show up after a while
+//	log.Printf(
+//		"[INFO] Waiting for VM (%s) to have %s of %s",
+//		d.Get("name"), attribute, target)
+//
+//	stateConf := &resource.StateChangeConf{
+//		Pending:        pending,
+//		Target:         []string{target},
+//		Refresh:        newVMStateRefreshFunc(d, attribute, meta),
+//		Timeout:        5 * time.Minute,
+//		Delay:          delay,
+//		MinTimeout:     interval,
+//		NotFoundChecks: 60,
+//	}
+//
+//	return stateConf.WaitForState()
+//}
 func WaitForVMAttribute(
 	d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
 	// Wait for the droplet so we can get the networking attributes
@@ -638,7 +696,6 @@ func WaitForVMAttribute(
 
 	return stateConf.WaitForState()
 }
-
 func newVMStateRefreshFunc(
 	d *schema.ResourceData, attribute string, meta interface{}) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
