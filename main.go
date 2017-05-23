@@ -4,8 +4,8 @@
 package main
 
 import (
-	"./provider"
 	"github.com/hashicorp/terraform/plugin"
+	"terraform-provider-virtualbox/provider"
 )
 
 func main() {

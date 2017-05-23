@@ -4,20 +4,21 @@
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
+Fork from [terraform-provider-virtualbox](https://github.com/ccll/terraform-provider-virtualbox) by ccll
+
 # How to install
 
-1. Download prebuilt binaries from [releases](https://github.com/ccll/terraform-provider-virtualbox/releases).
-2. Rename downloaded binary file to `terraform-provider-virtualbox`.
-3. Copy the `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
+1. go get github.com/pyToshka/terraform-provider-virtualbox
 
 # How to build from source
 
-1. Make sure you've got [goop](https://github.com/nitrous-io/goop) installed, we are using goop to lock the version of dependencies. `go get -v github.com/nitrous-io/goop`
-2. `git clone https://github.com/ccll/terraform-provider-virtualbox.git`
-3. Run `goop install` in the cloned repo to install all dependencies.
-4. `goop go build` to build this plugin.
-5. `goop go install` to install the plugin binary at `.vendor/bin/terraform-provider-virtualbox`. If you are cross-compiling with tools like [gox](https://github.com/mitchellh/gox), run `goop exec gox`, check goop documentation for details.
-6. Copy the `terraform-provider-virtualbox` binary to the same directory as your `terraform` binary.
+1. git clone https://github.com/pyToshka/terraform-provider-virtualbox
+2. cd terraform-provider-virtualbox
+3. go get
+4. mv terraform-provider-virtualbox example/
+5. cd example/
+6. terraform plan
+7. terraform apply
 
 # Resources
 
@@ -26,7 +27,8 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 ### Schema
 
 - `name`, string, required: The name of the virtual machine.
-- `image`, string, required: The url of the image file.
+- `image`, string, required: The place  of the image file(archive or vagrant box).
+- `url`, string, optional, default not set: The url for downloaded vagrant box from external resource (ex. [Ubuntu Vagrant box](https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/14.04/providers/virtualbox.box])) . If not set using `image` variable.
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
 - `user_data`, string, optional, default="": User defined data.
@@ -77,24 +79,19 @@ output "IPAddr" {
 
 # Limitations
 
-- Only local images is allowed, for now.
+- Experimental provider!
 
 # Example images
 
 - [ubuntu-15.04](https://github.com/ccll/terraform-provider-virtualbox-images/releases/tag/ubuntu-15.04)
 
-# How to make an image
+- [Ubuntu Vagrant box](https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/14.04/providers/virtualbox.box])
 
-- An image file is a tarball file in format '.tar.gz', '.tar.bz2' or '.tar.xz'.
-- An image tarball should contain atleast one virtual disk files, for now only ".vdi' and '.vmdk' is supported. You can run `VBoxManage clonehd` to convert formats.
-- '.vbox' file is ignored as we are creating a brand new VM instead of cloning from existing one, so you can avoid packing them into the image. There might be a small chance your image will not work in the newly created VM if some spec flags varies greatly, but as long as you make your image in a VM created with default flags, things should work smoothly.
-- All virtual disk files in the image will be attached to the same SATA controller in **alphabet** order, so name them properly before making the tarball.
-- VirtualBox Guest Addition **must** be installed and running in the guest OS, as the IP address is retrieved via it. If you have a better approach which does not require Guest Addition, please write to me, or better, send a PR.
 
 # TODO
 
 - [ ] Optimize resourceVMUpdate(), eliminate unneccessary restarts of VM.
-- [ ] Auto download image from remote url.
+- [x] Auto download image from remote url.
 - [ ] Validate downloaded image against checksum.
 - [ ] Download the same image only once (based on checksum).
 - [ ] Re-download corrupted image (based on checksum).
