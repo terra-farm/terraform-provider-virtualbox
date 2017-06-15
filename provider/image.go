@@ -8,8 +8,23 @@ import (
 	"os/exec"
 
 	"path/filepath"
+	"hash"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"io"
 )
-
+type Image struct {
+	// Image URL where to download from
+	URL string
+	// Checksum of the image, used to check integrity after downloading it
+	Checksum string
+	// Algorithm use to check the checksum
+	ChecksumType string
+	// Internal file reference
+	file *os.File
+}
 func unpackImage(image, toDir string) error {
 	/* Check if toDir exists */
 	_, err := os.Stat(toDir)
@@ -56,4 +71,39 @@ func gatherDisks(path string) ([]string, error) {
 		return nil, err
 	}
 	return disks, nil
+}
+func (img *Image) verify() error {
+	// Makes sure the file cursor is positioned at the beginning of the file
+	_, err := img.file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[DEBUG] Verifying image checksum...")
+	var hasher hash.Hash
+
+	switch img.ChecksumType {
+	case "md5":
+		hasher = md5.New()
+	case "sha1":
+		hasher = sha1.New()
+	case "sha256":
+		hasher = sha256.New()
+	case "sha512":
+		hasher = sha512.New()
+	default:
+		return fmt.Errorf("[ERROR] Crypto algorithm no supported: %s", img.ChecksumType)
+	}
+	_, err = io.Copy(hasher, img.file)
+	if err != nil {
+		return err
+	}
+
+	result := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	if result != img.Checksum {
+		return fmt.Errorf("[ERROR] Checksum does not match\n Result: %s\n Expected: %s", result, img.Checksum)
+	}
+
+	return nil
 }

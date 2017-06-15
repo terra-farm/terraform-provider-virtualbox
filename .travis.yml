@@ -1,0 +1,30 @@
+language: go
+go:
+- 1.8
+install:
+- go get github.com/hashicorp/terraform
+- go get github.com/onsi/ginkgo/ginkgo
+- go get github.com/onsi/gomega
+script:
+- |
+  if [ "$(go fmt ./...)"]; then
+    echo "You need to run `go fmt`"
+    exit 1
+  fi
+- go test ./... -v
+after_success:
+- cd $GOPATH/src/github.com/hashicorp/terraform
+- git checkout v0.9.5
+- cd $GOPATH/src/github.com/pyToshka/terraform-provider-virtualbox
+- bin/build-all.sh 0.9
+deploy:
+  provider: releases
+  file:
+  - out/terraform-provider-virtualbox_darwin_amd64
+  - out/terraform-provider-virtualbox_linux_386
+  - out/terraform-provider-virtualbox_linux_amd64
+  - out/terraform-provider-virtualbox_windows_386.exe
+  - out/terraform-provider-virtualbox_windows_amd64.exe
+  on:
+    tags: true
+    all_branches: true
