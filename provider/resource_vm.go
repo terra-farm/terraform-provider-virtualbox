@@ -77,6 +77,16 @@ func resourceVM() *schema.Resource {
 				Optional: true,
 				Default:  "",
 			},
+			"checksum": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"checksum_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
 
 			"network_adapter": &schema.Schema{
 				Type:     schema.TypeList,
@@ -136,25 +146,30 @@ var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
-	if len(d.Get("url").(string)) > 0 {
-		path := d.Get("image").(string)
-		url:= d.Get("url").(string)
-		// Create the file
-		out, err := os.Create(path)
-		if err != nil  {
-			return err
-		}
-		defer out.Close()
-		// Get the data
-		resp, err := http.Get(url)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		// Writer the body to file
-		_, err = io.Copy(out, resp.Body)
-		if err != nil  {
-			return err
+	var _, err = os.Stat(d.Get("image").(string))
+	if os.IsNotExist(err) {
+		if len(d.Get("url").(string)) > 0 {
+			if len(d.Get("url").(string)) > 0 {
+				path := d.Get("image").(string)
+				url := d.Get("url").(string)
+				// Create the file
+				out, err := os.Create(path)
+				if err != nil {
+					return err
+				}
+				defer out.Close()
+				// Get the data
+				resp, err := http.Get(url)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+				// Writer the body to file
+				_, err = io.Copy(out, resp.Body)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	image := d.Get("image").(string)

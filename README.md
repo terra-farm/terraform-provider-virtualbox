@@ -1,5 +1,3 @@
-# **[This project is not actively maintained, someone please take over it.]**
-
 # VirtualBox provider for Terraform
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
@@ -45,9 +43,7 @@ Fork from [terraform-provider-virtualbox](https://github.com/ccll/terraform-prov
 ### Network adapter types
 - [x] NAT
 - [x] bridged
-- [ ] Hostonly  (not tested, probably can work)
-- [ ] Internal  (not tested)
-- [ ] Generic  (not tested)
+
 
 # Example
 
@@ -90,9 +86,8 @@ output "IPAddr" {
 
 # TODO
 
-- [ ] Optimize resourceVMUpdate(), eliminate unneccessary restarts of VM.
+- [x] Optimize resourceVMUpdate(), eliminate unneccessary restarts of VM.
 - [x] Auto download image from remote url.
 - [ ] Validate downloaded image against checksum.
-- [ ] Download the same image only once (based on checksum).
+- [x] Download the same image only once (based on checksum).
 - [ ] Re-download corrupted image (based on checksum).
-- [ ] Eliminate the mandatory usage of 'host_interface' in config file. For now the 'host_interface' must be specified in 'hostonly' and 'bridged' network, and must reference a valid host interface, otherwise the VM will refuse to boot. This is bad for team collaboration as the host interface names are often different on different machines. A more robust approach is to enumerate all host interfaces and automatically assign one (maybe based on default routing information?) if not specified explicitly.

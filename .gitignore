@@ -11,3 +11,5 @@
 /terraform-provider-virtualbox
 .idea/
 .DS_Store
+.python-version
+/examples/.python-version
