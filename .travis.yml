@@ -1,24 +1,14 @@
-sudo: false
 language: go
 
 go:
-  - 1.8
-  - tip
+  - 1.5
 
-before_install:
-  - go get github.com/kr/godep
-  - go get github.com/c4milo/unzipit
-  - mkdir -p $HOME/gopath/src/github.com/hooklift/govix; git clone https://github.com/hooklift/govix.git $HOME/gopath/src/github.com/hooklift/govix
-  - go get github.com/hooklift/govmx
-  - go get github.com/dustin/go-humanize
+install:
   - go get github.com/mitchellh/gox
-  - go get github.com/hashicorp/go-multierror
-  - mkdir -p $HOME/gopath/src/github.com/hashicorp/terraform; git clone https://github.com/hashicorp/terraform.git $HOME/gopath/src/github.com/hashicorp/terraform
-  - export PATH="$HOME/gopath/bin:$PATH"
-  #- pushd $HOME/gopath/src/github.com/hashicorp/terraform; make; popd
+  - go get
+  - gox
+  - find .
+  - go test ./...
 
-install: make build
-
-matrix:
-  allow_failures:
-    - go: tip
+notifications:
+  email: change
