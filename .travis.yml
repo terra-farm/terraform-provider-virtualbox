@@ -1,30 +1,45 @@
+sudo: false
+
 language: go
 go:
-- 1.8
+  - 1.8
+
+env:
+  - GIMME_OS=linux   GIMME_ARCH=amd64
+  - GIMME_OS=darwin  GIMME_ARCH=amd64
+  - GIMME_OS=windows GIMME_ARCH=amd64
+
+branches:
+  only:
+    - master
+
+# workaround for travis-ci/gimme#25 to pick up latest version of gimme and run again
+before_install:
+  - curl -o gimme -sL https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
+  - chmod u+x gimme
+  - unset GOROOT GOTOOLDIR
+  - eval "$(./gimme 1.8)"
+  - go version
+  - go env
+
 install:
-- go get github.com/hashicorp/terraform
-- go get github.com/onsi/ginkgo/ginkgo
-- go get github.com/onsi/gomega
+  - date -u +"%Y-%m-%dT%H:%M:%SZ"
+  - go get -d -v ./...
+
 script:
-- |
-  if [ "$(go fmt ./...)"]; then
-    echo "You need to run `go fmt`"
-    exit 1
-  fi
-- go test ./... -v
-after_success:
-- cd $GOPATH/src/github.com/hashicorp/terraform
-- git checkout v0.9.5
-- cd $GOPATH/src/github.com/pyToshka/terraform-provider-virtualbox
-- bin/build-all.sh 0.9
+  - go build -v -o terraform-provider-virtualbox
+  - tar czvf terraform-provider-virtualbox_${TRAVIS_TAG}_${GIMME_OS}_${GIMME_ARCH}.tar.gz terraform-provider-virtualbox
+
 deploy:
+  # setup with "travis setup releases"
   provider: releases
-  file:
-  - out/terraform-provider-virtualbox_darwin_amd64
-  - out/terraform-provider-virtualbox_linux_386
-  - out/terraform-provider-virtualbox_linux_amd64
-  - out/terraform-provider-virtualbox_windows_386.exe
-  - out/terraform-provider-virtualbox_windows_amd64.exe
+  skip_cleanup: true
+  api_key:
+    secure: x_replace_via___travis_setup_releases___x
+  file: terraform-provider-virtualbox_*
+  file_glob: true
   on:
+    repo: pyToshka/terraform-provider-virtualbox
+    #all_branches: true
+    branch: master
     tags: true
-    all_branches: true
