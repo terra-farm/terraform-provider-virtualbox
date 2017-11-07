@@ -7,14 +7,15 @@ import (
 	"os"
 	"os/exec"
 
-	"path/filepath"
-	"hash"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"hash"
 	"io"
+	"path/filepath"
 )
+
 type Image struct {
 	// Image URL where to download from
 	URL string
@@ -25,6 +26,7 @@ type Image struct {
 	// Internal file reference
 	file *os.File
 }
+
 func unpackImage(image, toDir string) error {
 	/* Check if toDir exists */
 	_, err := os.Stat(toDir)
