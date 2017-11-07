@@ -7,3 +7,6 @@ install:
   - go get
   - go vet
   - gox -os "freebsd darwin linux windows" -arch "386 amd64"
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
