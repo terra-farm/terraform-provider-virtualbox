@@ -1,3 +1,7 @@
+# travis-ci status
+
+[![Build Status](https://travis-ci.org/pyToshka/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/pyToshka/terraform-provider-virtualbox)
+
 # VirtualBox provider for Terraform
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
