@@ -1,0 +1,14 @@
+language: go
+go: 1.9.1
+install:
+  - go get github.com/mitchellh/gox
+  - go get github.com/hashicorp/terraform
+  - go get github.com/smartystreets/goconvey/convey
+  - go get
+  - go vet
+  - gox -os "freebsd darwin linux windows" -arch "386 amd64"
+script:
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+  
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

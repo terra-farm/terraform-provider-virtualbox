@@ -12,16 +12,17 @@ import (
 	"sync"
 	"time"
 
-	vbox "github.com/pyToshka/go-virtualbox"
-	"github.com/hashicorp/terraform/helper/schema"
 	multierror "github.com/hashicorp/go-multierror"
-	"os/exec"
-	"runtime"
+	"github.com/hashicorp/terraform/helper/schema"
+	vbox "github.com/pyToshka/go-virtualbox"
 	"io"
 	"net/http"
+	"os/exec"
+	"runtime"
 )
+
 var (
-	VBM     string // Path to VBoxManage utility.
+	VBM string // Path to VBoxManage utility.
 )
 
 func init() {
@@ -73,6 +74,16 @@ func resourceVM() *schema.Resource {
 			},
 
 			"user_data": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"checksum": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+			"checksum_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
@@ -136,25 +147,30 @@ var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	/* TODO: allow partial updates */
-	if len(d.Get("url").(string)) > 0 {
-		path := d.Get("image").(string)
-		url:= d.Get("url").(string)
-		// Create the file
-		out, err := os.Create(path)
-		if err != nil  {
-			return err
-		}
-		defer out.Close()
-		// Get the data
-		resp, err := http.Get(url)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		// Writer the body to file
-		_, err = io.Copy(out, resp.Body)
-		if err != nil  {
-			return err
+	var _, err = os.Stat(d.Get("image").(string))
+	if os.IsNotExist(err) {
+		if len(d.Get("url").(string)) > 0 {
+			if len(d.Get("url").(string)) > 0 {
+				path := d.Get("image").(string)
+				url := d.Get("url").(string)
+				// Create the file
+				out, err := os.Create(path)
+				if err != nil {
+					return err
+				}
+				defer out.Close()
+				// Get the data
+				resp, err := http.Get(url)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+				// Writer the body to file
+				_, err = io.Copy(out, resp.Body)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 	image := d.Get("image").(string)
@@ -209,7 +225,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
 			VBM = filepath.Join(p, "VBoxManage.exe")
 		}
-		setuiid := exec.Command(VBM + "internalcommands sethduuid " +src)
+		setuiid := exec.Command(VBM + "internalcommands sethduuid " + src)
 		err := setuiid.Run()
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err = vbox.CloneHD(src, target)
@@ -409,7 +425,7 @@ func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 			continue
 		}
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d,[]string{"yes"}, []string{"no"}, key, meta, 3*time.Second, 3*time.Second)
+		_, err = WaitForVMAttribute(d, []string{"yes"}, []string{"no"}, key, meta, 3*time.Second, 3*time.Second)
 		if err != nil {
 			return fmt.Errorf(
 				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
