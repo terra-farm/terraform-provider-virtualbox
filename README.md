@@ -1,24 +1,22 @@
-[![Build Status](https://travis-ci.org/pyToshka/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/pyToshka/terraform-provider-virtualbox)
+[![Build Status](https://travis-ci.org/ccll/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/ccll/terraform-provider-virtualbox)
 
 # VirtualBox provider for Terraform
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
-Fork from [terraform-provider-virtualbox](https://github.com/ccll/terraform-provider-virtualbox) by ccll
-
 # How to install
 
-1. go get github.com/pyToshka/terraform-provider-virtualbox
+1. go get github.com/ccll/terraform-provider-virtualbox
 
 # How to build from source
 
-1. git clone https://github.com/pyToshka/terraform-provider-virtualbox
-2. cd terraform-provider-virtualbox
-3. go get
-4. mv terraform-provider-virtualbox example/
-5. cd example/
-6. terraform plan
-7. terraform apply
+1. git clone https://github.com/ccll/terraform-provider-virtualbox
+1. cd terraform-provider-virtualbox
+1. go get
+1. mv terraform-provider-virtualbox example/
+1. cd example/
+1. terraform plan
+1. terraform apply
 
 # Resources
 
@@ -43,13 +41,13 @@ Fork from [terraform-provider-virtualbox](https://github.com/ccll/terraform-prov
   - `.#.ipv4_address_available`, string, computed: Wheather or not an IPv4 address is actaully assigned to the adapter, possible values: "yes", "no".
 
 ### Network adapter types
+
 - [x] NAT
 - [x] bridged
 
-
 # Example
 
-```
+```hcl
 resource "virtualbox_vm" "node" {
     count = 2
     name = "${format("node-%02d", count.index+1)}"
@@ -84,7 +82,6 @@ output "IPAddr" {
 - [ubuntu-15.04](https://github.com/ccll/terraform-provider-virtualbox-images/releases/tag/ubuntu-15.04)
 
 - [Ubuntu Vagrant box](https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/14.04/providers/virtualbox.box])
-
 
 # TODO
 
