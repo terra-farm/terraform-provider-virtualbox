@@ -43,7 +43,6 @@ func resourceVM() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
 			"image": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -54,7 +53,12 @@ func resourceVM() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
-
+			"optical_disks": &schema.Schema{
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "List of Optical Disks to attach",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"cpus": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
@@ -241,6 +245,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
+
 	err = vm.AddStorageCtl("SATA", vbox.StorageController{
 		SysBus:      vbox.SysBusSATA,
 		Ports:       uint(len(vmDisks)) + 1,
@@ -258,6 +263,42 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 			Device:    0,
 			DriveType: vbox.DriveHDD,
 			Medium:    disk,
+		})
+		if err != nil {
+			log.Printf("[ERROR] Attach VirtualBox storage medium: %s", err.Error())
+			return err
+		}
+	}
+
+	opticalDiskCount := d.Get("optical_disks.#").(int)
+	opticalDisks := make([]string, 0, opticalDiskCount)
+
+	for i := 0; i < opticalDiskCount; i++ {
+		attr := fmt.Sprintf("optical_disks.%d", i)
+		if optical_disk_image, ok := d.Get(attr).(string); ok && attr != "" {
+			opticalDisks = append(opticalDisks, optical_disk_image)
+		}
+	}
+
+	for i := 0; i < len(opticalDisks); i++ {
+		optical_disk_image := opticalDisks[i]
+		fileName := filepath.Base(optical_disk_image)
+
+		target := filepath.Join(vm.BaseFolder, fileName)
+
+		copyfile := exec.Command("cp", "-a", optical_disk_image, target)
+		err := copyfile.Run()
+
+		if err != nil {
+			log.Printf("[ERROR] Clone *.iso and *.dmg to VM folder: %s", err.Error())
+			return err
+		}
+
+		err = vm.AttachStorage("SATA", vbox.StorageMedium{
+			Port:      uint(len(vmDisks) + i),
+			Device:    0,
+			DriveType: vbox.DriveDVD,
+			Medium:    target,
 		})
 		if err != nil {
 			log.Printf("[ERROR] Attach VirtualBox storage medium: %s", err.Error())
