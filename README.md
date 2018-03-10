@@ -1,16 +1,18 @@
-[![Build Status](https://travis-ci.org/ccll/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/ccll/terraform-provider-virtualbox)
+[![Build Status](https://travis-ci.org/terra-farm/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/terra-farm/terraform-provider-virtualbox)
 
 # VirtualBox provider for Terraform
 
 Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
 
+Donated to the `terra-farm` group by [`ccll`](https://github.com/ccll)
+
 # How to install
 
-1. go get github.com/ccll/terraform-provider-virtualbox
+1. go get github.com/terra-farm/terraform-provider-virtualbox
 
 # How to build from source
 
-1. git clone https://github.com/ccll/terraform-provider-virtualbox
+1. git clone https://github.com/terra-farm/terraform-provider-virtualbox
 1. cd terraform-provider-virtualbox
 1. go get
 1. mv terraform-provider-virtualbox example/
