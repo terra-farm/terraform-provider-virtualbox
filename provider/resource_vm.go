@@ -22,7 +22,8 @@ import (
 )
 
 var (
-	VBM string // Path to VBoxManage utility.
+	VBM              string // Path to VBoxManage utility.
+	defaultBootOrder = []string{"disk", "none", "none", "none"}
 )
 
 func init() {
@@ -129,6 +130,14 @@ func resourceVM() *schema.Resource {
 						},
 					},
 				},
+			},
+
+			"boot_order": &schema.Schema{
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "Boot order, max 4 slots, each in [none, floopy, dvd, disk, net]",
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				MaxItems:    4,
 			},
 		},
 	}
@@ -410,6 +419,8 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 		break
 	}
 
+	d.Set("boot_order", vm.BootOrder)
+
 	return nil
 }
 
@@ -489,11 +500,14 @@ func tf_to_vbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	vm.Flag = vbox.F_acpi | vbox.F_ioapic | vbox.F_rtcuseutc | vbox.F_pae |
 		vbox.F_hwvirtex | vbox.F_nestedpaging | vbox.F_largepages | vbox.F_longmode |
 		vbox.F_vtxvpid | vbox.F_vtxux
-	vm.BootOrder = []string{"disk", "none", "none", "none"}
 	vm.NICs, err = net_tf_to_vbox(d)
 	userData := d.Get("user_data").(string)
 	if userData != "" {
 		err = vm.SetExtraData("user_data", userData)
+	}
+	vm.BootOrder = defaultBootOrder
+	for i, bootDev := range d.Get("boot_order").([]interface{}) {
+		vm.BootOrder[i] = bootDev.(string)
 	}
 	return err
 }
