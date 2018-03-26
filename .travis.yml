@@ -23,5 +23,5 @@ deploy:
   skip_cleanup: true
 
   on:
-    repo: pyToshka/terraform-provider-virtualbox
+    repo: terra-farm/terraform-provider-virtualbox
     tags: true
