@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/terra-farm/terraform-provider-virtualbox.svg?branch=master)](https://travis-ci.org/terra-farm/terraform-provider-virtualbox)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fterra-farm%2Fterraform-provider-virtualbox.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fterra-farm%2Fterraform-provider-virtualbox?ref=badge_shield)
 
 # VirtualBox provider for Terraform
 
@@ -95,3 +96,7 @@ output "IPAddr" {
 - [ ] Validate downloaded image against checksum.
 - [x] Download the same image only once (based on checksum).
 - [ ] Re-download corrupted image (based on checksum).
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fterra-farm%2Fterraform-provider-virtualbox.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fterra-farm%2Fterraform-provider-virtualbox?ref=badge_large)
