@@ -87,7 +87,7 @@ output "IPAddr" {
 
 - [ubuntu-15.04](https://github.com/ccll/terraform-provider-virtualbox-images/releases/tag/ubuntu-15.04)
 
-- [Ubuntu Vagrant box](https://vagrantcloud.com/ubuntu/boxes/trusty64/versions/20180206.0.0/providers/virtualbox.box])
+- [Ubuntu Vagrant box](https://vagrantcloud.com/ubuntu/boxes/trusty64/versions/20180206.0.0/providers/virtualbox.box)
 
 # TODO
 
