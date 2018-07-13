@@ -14,6 +14,10 @@
   name = "github.com/smartystreets/goconvey"
   version = "1.6.3"
 
+[[override]]
+  name = "golang.org/x/net"
+  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
+
 [prune]
   go-tests = true
   unused-packages = true
