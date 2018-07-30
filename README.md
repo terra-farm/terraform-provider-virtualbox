@@ -15,7 +15,7 @@ Donated to the `terra-farm` group by [`ccll`](https://github.com/ccll)
 
 1. git clone https://github.com/terra-farm/terraform-provider-virtualbox
 1. cd terraform-provider-virtualbox
-1. go get
+1. dep ensure
 1. mv terraform-provider-virtualbox example/
 1. cd example/
 1. terraform plan

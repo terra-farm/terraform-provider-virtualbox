@@ -1,0 +1,23 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+
+[[constraint]]
+  name = "github.com/hashicorp/terraform"
+  version = "0.11.7"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/pyToshka/go-virtualbox"
+
+[[constraint]]
+  name = "github.com/smartystreets/goconvey"
+  version = "1.6.3"
+
+[[override]]
+  name = "golang.org/x/net"
+  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
+
+[prune]
+  go-tests = true
+  unused-packages = true
