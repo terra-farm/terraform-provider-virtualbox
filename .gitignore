@@ -14,4 +14,3 @@ vendor/
 .DS_Store
 .python-version
 /examples/.python-version
-scripts/gogetcookie.sh
