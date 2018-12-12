@@ -7,6 +7,8 @@ Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provi
 
 Donated to the `terra-farm` group by [`ccll`](https://github.com/ccll)
 
+Published documentation is located on the [Terra-Farm website](https://terra-farm.github.io/provider-virtualbox/).
+
 # How to install
 
 1. go get github.com/terra-farm/terraform-provider-virtualbox
