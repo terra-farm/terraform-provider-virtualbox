@@ -1,0 +1,7 @@
+name: provider-virtualbox
+title: VirtualBox Provider
+version: 'master' 
+start_page: ROOT:index.adoc 
+nav:
+- modules/ROOT/nav.adoc
+- modules/reference/nav.adoc

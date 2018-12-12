@@ -1,0 +1,3 @@
+* Reference
+** Resources
+*** xref:resource_vm.adoc[vm]

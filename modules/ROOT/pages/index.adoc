@@ -1,0 +1,5 @@
+= VirtualBox Provider
+
+Inspired by [terraform-provider-vix](https://github.com/hooklift/terraform-provider-vix)
+
+Donated to the `terra-farm` group by [`ccll`](https://github.com/ccll)
