@@ -2,23 +2,23 @@ package provider
 
 import (
 	"fmt"
-	"github.com/dustin/go-humanize"
-	"github.com/hashicorp/terraform/helper/resource"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	vbox "github.com/pyToshka/go-virtualbox"
-	"io"
-	"net/http"
-	"os/exec"
-	"runtime"
 )
 
 var (

@@ -1,10 +1,11 @@
 package provider
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var HelloText = "Hello, world!"
