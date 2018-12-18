@@ -1,18 +1,17 @@
 package provider
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
-	"os/exec"
-
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"fmt"
 	"hash"
 	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
 	"path/filepath"
 )
 
