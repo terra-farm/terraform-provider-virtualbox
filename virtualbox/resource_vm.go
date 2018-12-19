@@ -18,11 +18,12 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pkg/errors"
 	vbox "github.com/pyToshka/go-virtualbox"
 )
 
 var (
-	VBM              string // Path to VBoxManage utility.
+	vbm              string // Path to VBoxManage utility.
 	defaultBootOrder = []string{"disk", "none", "none", "none"}
 )
 
@@ -145,21 +146,21 @@ func resourceVM() *schema.Resource {
 
 func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	name := d.Get("name").(string)
-	_, err := vbox.GetMachine(name)
-	if err == nil {
+
+	switch _, err := vbox.GetMachine(name); err {
+	case nil:
 		return true, nil
-	} else if err == vbox.ErrMachineNotExist {
+	case vbox.ErrMachineNotExist:
 		return false, nil
-	} else {
-		log.Printf("[ERROR] Checking existence of VM '%s'\n", name)
-		return false, err
+	default:
+		return false, errLogf("Checking existance of VM '%s': %v", name, err)
 	}
 }
 
 var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
-	/* TODO: allow partial updates */
+	// TODO: allow partial upgrades.
 	var _, err = os.Stat(d.Get("image").(string))
 	if os.IsNotExist(err) {
 		if len(d.Get("url").(string)) > 0 {
@@ -188,94 +189,90 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	image := d.Get("image").(string)
 
-	/* Get gold folder and machine folder */
+	// Get gold folder and machine folder
 	usr, err := user.Current()
 	if err != nil {
-		log.Printf("[ERROR] Get current user: %s", err.Error())
-		return err
+		return errLogf("Get the current user: %v", err)
 	}
 	goldFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/gold")
 	machineFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/machine")
 	os.MkdirAll(goldFolder, 0740)
 	os.MkdirAll(machineFolder, 0740)
 
-	/* Unpack gold image to gold folder */
+	// Unpack gold image to gold folder
 	imageOpMutex.Lock() // Sequentialize image unpacking to avoid conflicts
 	goldFileName := filepath.Base(image)
 	goldName := strings.TrimSuffix(goldFileName, filepath.Ext(goldFileName))
 	if filepath.Ext(goldName) == ".tar" {
 		goldName = strings.TrimSuffix(goldName, ".tar")
 	}
+
 	goldPath := filepath.Join(goldFolder, goldName)
-	err = unpackImage(image, goldPath)
-	if err != nil {
-		log.Printf("[ERROR] Unpack image %s: %s", image, err.Error())
+	if err = unpackImage(image, goldPath); err != nil {
 		imageOpMutex.Unlock()
-		return err
+		return errLogf("Unpacking image %s: %v", image, err)
 	}
 	imageOpMutex.Unlock()
 
-	/* Gather '*.vdi' and "*.vmdk" files from gold */
+	// Gather '*.vdi' and "*.vmdk" files from gold
 	goldDisks, err := gatherDisks(goldPath)
 	if err != nil {
-		return err
+		return errLogf("Unable to gather disks: %v", err)
 	}
 
-	/* Create VM instance */
+	// Create VM instance
 	name := d.Get("name").(string)
 	vm, err := vbox.CreateMachine(name, machineFolder)
 	if err != nil {
-		log.Printf("[ERROR] Create virtualbox VM %s: %s\n", name, err.Error())
-		return err
+		return errLogf("Create virtualbox VM %s: %v\n", name, err)
 	}
 
-	/* Clone gold virtual disk files to VM folder */
+	// Clone gold virtual disk files to VM folder
 	for _, src := range goldDisks {
 		filename := filepath.Base(src)
 
 		target := filepath.Join(vm.BaseFolder, filename)
-		VBM = "VBoxManage"
+		vbm = "VBoxManage"
 		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
-			VBM = filepath.Join(p, "VBoxManage.exe")
+			vbm = filepath.Join(p, "VBoxManage.exe")
 		}
-		setuiid := exec.Command(VBM + "internalcommands sethduuid " + src)
-		err := setuiid.Run()
+		setuiid := exec.Command(vbm + "internalcommands sethduuid " + src)
+		if err := setuiid.Run(); err != nil {
+			return errLogf("Unable to set UIID: %v", err)
+		}
+
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
-		err = vbox.CloneHD(src, target)
+		err := vbox.CloneHD(src, target)
 		imageOpMutex.Unlock()
 		if err != nil {
-			log.Printf("[ERROR] Clone *.vdi and *.vmdk to VM folder: %s", err.Error())
-			return err
+			return errLogf("Clone *.vdi and *.vmdk to VM folder: %v", err)
 		}
 	}
 
-	/* Attach virtual disks to VM */
+	// Attach virtual disks to VM
 	vmDisks, err := gatherDisks(vm.BaseFolder)
 	if err != nil {
-		return err
+		return errLogf("Unable to gather disks: %v", err)
 	}
 
-	err = vm.AddStorageCtl("SATA", vbox.StorageController{
+	if err := vm.AddStorageCtl("SATA", vbox.StorageController{
 		SysBus:      vbox.SysBusSATA,
 		Ports:       uint(len(vmDisks)) + 1,
 		Chipset:     vbox.CtrlIntelAHCI,
 		HostIOCache: true,
 		Bootable:    true,
-	})
-	if err != nil {
-		log.Printf("[ERROR] Create VirtualBox storage controller: %s", err.Error())
-		return err
+	}); err != nil {
+		return errLogf("Create VirtualBox storage controller: %v", err)
 	}
+
 	for i, disk := range vmDisks {
-		err = vm.AttachStorage("SATA", vbox.StorageMedium{
+		if err := vm.AttachStorage("SATA", vbox.StorageMedium{
 			Port:      uint(i),
 			Device:    0,
 			DriveType: vbox.DriveHDD,
 			Medium:    disk,
-		})
-		if err != nil {
-			log.Printf("[ERROR] Attach VirtualBox storage medium: %s", err.Error())
-			return err
+		}); err != nil {
+			return errLogf("Attaching VirtualBox storage medium: %v", err)
 		}
 	}
 
@@ -284,66 +281,54 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 
 	for i := 0; i < opticalDiskCount; i++ {
 		attr := fmt.Sprintf("optical_disks.%d", i)
-		if optical_disk_image, ok := d.Get(attr).(string); ok && attr != "" {
-			opticalDisks = append(opticalDisks, optical_disk_image)
+		if opticalDiskImage, ok := d.Get(attr).(string); ok && attr != "" {
+			opticalDisks = append(opticalDisks, opticalDiskImage)
 		}
 	}
 
 	for i := 0; i < len(opticalDisks); i++ {
-		optical_disk_image := opticalDisks[i]
-		fileName := filepath.Base(optical_disk_image)
+		opticalDiskImage := opticalDisks[i]
+		fileName := filepath.Base(opticalDiskImage)
 
 		target := filepath.Join(vm.BaseFolder, fileName)
 
-		copyfile := exec.Command("cp", "-a", optical_disk_image, target)
-		err := copyfile.Run()
-
-		if err != nil {
-			log.Printf("[ERROR] Clone *.iso and *.dmg to VM folder: %s", err.Error())
-			return err
+		copyfile := exec.Command("cp", "-a", opticalDiskImage, target)
+		if err := copyfile.Run(); err != nil {
+			return errLogf("Cloning *.iso and *.dmg to VM folder: %v", err)
 		}
 
-		err = vm.AttachStorage("SATA", vbox.StorageMedium{
+		if err := vm.AttachStorage("SATA", vbox.StorageMedium{
 			Port:      uint(len(vmDisks) + i),
 			Device:    0,
 			DriveType: vbox.DriveDVD,
 			Medium:    target,
-		})
-		if err != nil {
-			log.Printf("[ERROR] Attach VirtualBox storage medium: %s", err.Error())
-			return err
+		}); err != nil {
+			return errLogf("Attaching VirtualBox storage medium: %v", err)
 		}
 	}
 
-	/* Setup VM general properties */
-	err = tf_to_vbox(d, vm)
-	if err != nil {
-		log.Printf("[ERROR] Convert Terraform data to VM properties: %s", err.Error())
-		return err
+	// Setup VM general properties
+	if err := tfToVbox(d, vm); err != nil {
+		return errLogf("Converting Terraform data to VM properties: %v", err)
 	}
-	err = vm.Modify()
-	if err != nil {
-		log.Printf("[ERROR] Setup VM properties: %s", err.Error())
-		return err
+	if err := vm.Modify(); err != nil {
+		return errLogf("Setup VM properties: %v", err)
 	}
 
-	/* Start the VM */
-	err = vm.Start()
-	if err != nil {
-		log.Printf("[ERROR] Start VM: %s", err.Error())
-		return err
+	// Start the VM
+	if err := vm.Start(); err != nil {
+		return errLogf("Starting VM: %v", err)
 	}
 
-	/* Assign VM ID */
+	// Assign VM ID
 	log.Printf("[DEBUG] Resource ID: %s\n", vm.UUID)
 	d.SetId(vm.UUID)
 
-	err = WaitUntilVMIsReady(d, vm, meta)
-	if err != nil {
-		log.Printf("[ERROR] Wait VM unitl ready: %s", err.Error())
-		return err
+	if err := waitUntilVMIsReady(d, vm, meta); err != nil {
+		return errLogf("Wait VM until ready: %v", err)
 	}
 
+	// Errors here are already logged.
 	return resourceVMRead(d, meta)
 }
 
@@ -364,13 +349,15 @@ func setState(d *schema.ResourceData, state vbox.MachineState) {
 
 func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	vm, err := vbox.GetMachine(d.Id())
-	if err != nil {
-		/* VM no longer exist */
-		if err == vbox.ErrMachineNotExist {
-			d.SetId("")
-			return nil
-		}
-		return err
+	switch err {
+	case nil:
+		break
+	case vbox.ErrMachineNotExist:
+		// VM no longer exists.
+		d.SetId("")
+		return nil
+	default:
+		return errLogf("unable to get machine: %v", err)
 	}
 
 	// if vm.State != vbox.Running {
@@ -387,15 +374,14 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 
 	userData, err := vm.GetExtraData("user_data")
 	if err != nil {
-		return err
+		return errLogf("can't get user data: %v", err)
 	}
 	if userData != nil && *userData != "" {
 		d.Set("user_data", *userData)
 	}
 
-	err = net_vbox_to_tf(vm, d)
-	if err != nil {
-		return err
+	if err = netVboxToTf(vm, d); err != nil {
+		return errLogf("can't convert vbox network to terraform data: %v", err)
 	}
 
 	/* Set connection info to first non NAT IPv4 address */
@@ -426,81 +412,85 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 
 func powerOnAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
 	if err := vm.Start(); err != nil {
-		return err
+		return errors.Wrap(err, "can't start vm")
 	}
 
-	return WaitUntilVMIsReady(d, vm, meta)
+	return errors.Wrap(waitUntilVMIsReady(d, vm, meta), "unable to power on and wait")
 }
 
 func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
-	/* TODO: allow partial updates */
+	// TODO: allow partial updates
 
 	vm, err := vbox.GetMachine(d.Id())
 	if err != nil {
-		return err
+		return errLogf("unable to get machine: %v", d.Id(), err)
 	}
 
 	if err := vm.Poweroff(); err != nil {
-		return err
+		return errLogf("unable to poweroff machine: %v", d.Id(), err)
 	}
 
-	/* Modify VM */
-	err = tf_to_vbox(d, vm)
-	if err != nil {
-		return err
+	// Modify VM
+	if err := tfToVbox(d, vm); err != nil {
+		return errLogf("can't convert terraform config to virtual machine: %v", err)
 	}
-	err = vm.Modify()
-	if err != nil {
-		return err
+	if err := vm.Modify(); err != nil {
+		return errLogf("unable to modify the vm: %v", err)
 	}
 
 	if err := powerOnAndWait(d, vm, meta); err != nil {
-		return err
+		return errLogf("unable to power on and wait for VM: %v", err)
 	}
 
+	// Errors are already logged
 	return resourceVMRead(d, meta)
 }
 
 func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
 	vm, err := vbox.GetMachine(d.Id())
 	if err != nil {
-		return err
+		return errLogf("unable to get machine: %v", err)
 	}
-	return vm.Delete()
+	if err := vm.Delete(); err != nil {
+		return errLogf("unable to remove the VM: %v", err)
+	}
+	return nil
 }
 
-/* Wait until VM is ready, and 'ready' means the first non NAT NIC get a ipv4_address assigned */
-func WaitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
-	var err error
+// Wait until VM is ready, and 'ready' means the first non NAT NIC get a ipv4_address assigned
+func waitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
 	for i, nic := range vm.NICs {
 		if nic.Network == vbox.NICNetNAT {
 			continue
 		}
+
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
-		_, err = WaitForVMAttribute(d, []string{"yes"}, []string{"no"}, key, meta, 3*time.Second, 3*time.Second)
-		if err != nil {
-			return fmt.Errorf(
-				"Error waiting for VM (%s) to become ready: %s", d.Get("name"), err)
+		if _, err := waitForVMAttribute(
+			d, []string{"yes"}, []string{"no"}, key, meta, 3*time.Second, 3*time.Second,
+		); err != nil {
+			return errors.Wrapf(err, "waiting for VM (%s) to become ready", d.Get("name"))
 		}
 		break
 	}
-	return err
+	return nil
 }
 
-func tf_to_vbox(d *schema.ResourceData, vm *vbox.Machine) error {
+func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	var err error
+
 	vm.OSType = "Linux_64"
 	vm.CPUs = uint(d.Get("cpus").(int))
 	bytes, err := humanize.ParseBytes(d.Get("memory").(string))
-	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot humanize bytes")
 	}
+	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
+
 	vm.VRAM = 20 // Always 10MiB for vram
 	vm.Flag = vbox.F_acpi | vbox.F_ioapic | vbox.F_rtcuseutc | vbox.F_pae |
 		vbox.F_hwvirtex | vbox.F_nestedpaging | vbox.F_largepages | vbox.F_longmode |
 		vbox.F_vtxvpid | vbox.F_vtxux
-	vm.NICs, err = net_tf_to_vbox(d)
+	vm.NICs, err = netTfToVbox(d)
 	userData := d.Get("user_data").(string)
 	if userData != "" {
 		err = vm.SetExtraData("user_data", userData)
@@ -512,8 +502,8 @@ func tf_to_vbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	return err
 }
 
-func net_tf_to_vbox(d *schema.ResourceData) ([]vbox.NIC, error) {
-	tf_to_vbox_network_type := func(attr string) (vbox.NICNetwork, error) {
+func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
+	tfToVboxNetworkType := func(attr string) (vbox.NICNetwork, error) {
 		switch attr {
 		case "bridged":
 			return vbox.NICNetBridged, nil
@@ -526,11 +516,11 @@ func net_tf_to_vbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 		case "generic":
 			return vbox.NICNetGeneric, nil
 		default:
-			return "", fmt.Errorf("[ERROR] Invalid virtual network adapter type: %s", attr)
+			return "", fmt.Errorf("Invalid virtual network adapter type: %s", attr)
 		}
 	}
 
-	tf_to_vbox_net_device := func(attr string) (vbox.NICHardware, error) {
+	tfToVboxNetDevice := func(attr string) (vbox.NICHardware, error) {
 		switch attr {
 		case "PCIII":
 			return vbox.AMDPCNetPCIII, nil
@@ -543,7 +533,7 @@ func net_tf_to_vbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 		case "IntelPro1000MTServer":
 			return vbox.IntelPro1000MTServer, nil
 		default:
-			return "", fmt.Errorf("[ERROR] Invalid virtual network device: %s", attr)
+			return "", fmt.Errorf("Invalid virtual network device: %s", attr)
 		}
 	}
 
@@ -557,10 +547,10 @@ func net_tf_to_vbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 		var adapter vbox.NIC
 
 		if attr, ok := d.Get(prefix + "type").(string); ok && attr != "" {
-			adapter.Network, err = tf_to_vbox_network_type(attr)
+			adapter.Network, err = tfToVboxNetworkType(attr)
 		}
 		if attr, ok := d.Get(prefix + "device").(string); ok && attr != "" {
-			adapter.Hardware, err = tf_to_vbox_net_device(attr)
+			adapter.Hardware, err = tfToVboxNetDevice(attr)
 		}
 		/* 'Hostonly' and 'bridged' network need property 'host_interface' been set */
 		if adapter.Network == vbox.NICNetHostonly || adapter.Network == vbox.NICNetBridged {
@@ -587,8 +577,8 @@ func net_tf_to_vbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 	return adapters, nil
 }
 
-func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
-	vbox_to_tf_network_type := func(netType vbox.NICNetwork) string {
+func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
+	vboxToTfNetworkType := func(netType vbox.NICNetwork) string {
 		switch netType {
 		case vbox.NICNetBridged:
 			return "bridged"
@@ -605,7 +595,7 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 		}
 	}
 
-	vbox_to_tf_vdevice := func(vdevice vbox.NICHardware) string {
+	vboxToTfVdevice := func(vdevice vbox.NICHardware) string {
 		switch vdevice {
 		case vbox.AMDPCNetPCIII:
 			return "PCIII"
@@ -676,14 +666,14 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 			return &multierror.Error{Errors: errs}
 		}
 
-		/* Assign NIC property to vbox structure and Terraform */
+		// Assign NIC property to vbox structure and Terraform
 		nics := make([]map[string]interface{}, 0, 1)
 
 		for _, nic := range vm.NICs {
 			out := make(map[string]interface{})
 
-			out["type"] = vbox_to_tf_network_type(nic.Network)
-			out["device"] = vbox_to_tf_vdevice(nic.Hardware)
+			out["type"] = vboxToTfNetworkType(nic.Network)
+			out["device"] = vboxToTfVdevice(nic.Hardware)
 			out["host_interface"] = nic.HostInterface
 			out["mac_address"] = nic.MacAddr
 
@@ -704,14 +694,14 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 		d.Set("network_adapter", nics)
 	} else {
-		/* Assign NIC property to vbox structure and Terraform */
+		// Assign NIC property to vbox structure and Terraform
 		nics := make([]map[string]interface{}, 0, 1)
 
 		for _, nic := range vm.NICs {
 			out := make(map[string]interface{})
 
-			out["type"] = vbox_to_tf_network_type(nic.Network)
-			out["device"] = vbox_to_tf_vdevice(nic.Hardware)
+			out["type"] = vboxToTfNetworkType(nic.Network)
+			out["device"] = vboxToTfVdevice(nic.Hardware)
 			out["host_interface"] = nic.HostInterface
 			out["mac_address"] = nic.MacAddr
 
@@ -747,10 +737,10 @@ func net_vbox_to_tf(vm *vbox.Machine, d *schema.ResourceData) error {
 //
 //	return stateConf.WaitForState()
 //}
-func WaitForVMAttribute(
+func waitForVMAttribute(
 	d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
-	// Wait for the droplet so we can get the networking attributes
-	// that show up after a while
+	// Wait for the vm so we can get the networking attributes that show up
+	// after a while.
 	log.Printf(
 		"[INFO] Waiting for VM (%s) to have %s of %s",
 		d.Get("name"), attribute, target)
@@ -767,6 +757,7 @@ func WaitForVMAttribute(
 
 	return stateConf.WaitForState()
 }
+
 func newVMStateRefreshFunc(
 	d *schema.ResourceData, attribute string, meta interface{}) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
@@ -780,7 +771,7 @@ func newVMStateRefreshFunc(
 			// Retrieve the VM properties
 			vm, err := vbox.GetMachine(d.Id())
 			if err != nil {
-				return nil, "", fmt.Errorf("Error retrieving VM: %s", err)
+				return nil, "", errors.Wrap(err, "unable to retrive vm")
 			}
 
 			return &vm, attr.(string), nil

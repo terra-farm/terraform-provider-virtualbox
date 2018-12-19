@@ -41,6 +41,7 @@ require (
 	github.com/mitchellh/mapstructure v0.0.0-20170307201123-53818660ed49
 	github.com/mitchellh/reflectwalk v0.0.0-20170726202117-63d60e9d0dbc
 	github.com/oklog/run v1.0.0
+	github.com/pkg/errors v0.8.0
 	github.com/posener/complete v1.1.1
 	github.com/pyToshka/go-virtualbox v0.0.0-20170522083831-fce0de2fddc6
 	github.com/smartystreets/assertions v0.0.0-20180301161246-7678a5452ebe
