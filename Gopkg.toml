@@ -1,10 +1,14 @@
 [[constraint]]
-  branch = "master"
   name = "github.com/dustin/go-humanize"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/hashicorp/go-multierror"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
-  version = "0.11.7"
+  version = "0.11.11"
 
 [[constraint]]
   branch = "master"
@@ -13,10 +17,6 @@
 [[constraint]]
   name = "github.com/smartystreets/goconvey"
   version = "1.6.3"
-
-[[override]]
-  name = "golang.org/x/net"
-  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
 
 [prune]
   go-tests = true
