@@ -5,10 +5,10 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/terra-farm/terraform-provider-virtualbox/provider"
+	"github.com/terra-farm/terraform-provider-virtualbox/virtualbox"
 )
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: provider.Provider})
+		ProviderFunc: virtualbox.Provider})
 }
