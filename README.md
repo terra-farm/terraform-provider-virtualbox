@@ -86,6 +86,7 @@ output "IPAddr" {
 # Limitations
 
 - Experimental provider!
+- The defaults here are only tested with the vagrant insecure (packer) keys (https://github.com/hashicorp/vagrant/tree/master/keys) as the login.
 
 # Example images
 
@@ -100,6 +101,7 @@ output "IPAddr" {
 - [ ] Validate downloaded image against checksum.
 - [x] Download the same image only once (based on checksum).
 - [ ] Re-download corrupted image (based on checksum).
+
 
 
 ## License
