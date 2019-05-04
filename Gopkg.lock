@@ -483,6 +483,22 @@
   version = "1.6.3"
 
 [[projects]]
+  branch = "master"
+  digest = "1:62c12a75d0a4e0196df185b12780b215d38107d57ad435af79d8fcc54279841e"
+  name = "github.com/terra-farm/go-virtualbox"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "80eb7494846409158e5c895255ba52e852a15f4b"
+
+[[projects]]
+  branch = "master"
+  digest = "1:05e43598a0901da71d4503ab252c10d30e774704281fd9f71d38bdb169412798"
+  name = "github.com/terra-farm/terraform-provider-virtualbox"
+  packages = ["virtualbox"]
+  pruneopts = "UT"
+  revision = "1c0276ced3322a94368dbc4a20bdfd1e9da4c9fe"
+
+[[projects]]
   digest = "1:db345c377984d0907323c09a9b17f11d995a59649fd38f909727df358b5f9020"
   name = "github.com/ulikunitz/xz"
   packages = [
@@ -638,8 +654,9 @@
     "github.com/hashicorp/terraform/helper/schema",
     "github.com/hashicorp/terraform/plugin",
     "github.com/hashicorp/terraform/terraform",
-    "github.com/pyToshka/go-virtualbox",
     "github.com/smartystreets/goconvey/convey",
+    "github.com/terra-farm/go-virtualbox",
+    "github.com/terra-farm/terraform-provider-virtualbox/virtualbox",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

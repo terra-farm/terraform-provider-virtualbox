@@ -26,10 +26,10 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/posener/complete v1.2.1 // indirect
-	github.com/pyToshka/go-virtualbox v0.0.0-20170522083831-fce0de2fddc6
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c
 	github.com/stretchr/testify v1.3.0 // indirect
+	github.com/terra-farm/go-virtualbox v0.0.0-20180710063303-80eb74948464
 	github.com/zclconf/go-cty v0.0.0-20181231001355-67e3da15e430 // indirect
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc // indirect
 	golang.org/x/net v0.0.0-20190119204137-ed066c81e75e // indirect
