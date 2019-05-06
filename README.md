@@ -32,8 +32,9 @@ Published documentation is located on the [Terra-Farm website](https://terra-far
 ### Schema
 
 - `name`, string, required: The name of the virtual machine.
-- `image`, string, required: The place  of the image file(archive or vagrant box).
-- `url`, string, optional, default not set: The url for downloaded vagrant box from external resource (ex. [Ubuntu Vagrant box](https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/14.04/providers/virtualbox.box])) . If not set using `image` variable.
+- `image`, string, required: The place of the image file (archive or vagrant box).
+  This can be a remote resource (http/https), or local location. (ex. [Ubuntu Virtualbox image](https://github.com/ccll/terraform-provider-virtualbox-images/releases]))
+- `url`, DEPRECATED - USE `image`, string, optional, default not set: The url for downloaded vagrant box from external resource. Overrides `image` if set.
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
 - `user_data`, string, optional, default="": User defined data.
@@ -60,7 +61,7 @@ resource "virtualbox_vm" "node" {
     count = 2
     name = "${format("node-%02d", count.index+1)}"
 
-    image = "~/ubuntu-15.04.tar.xz"
+    image = "https://github.com/ccll/terraform-provider-virtualbox-images/releases/download/ubuntu-15.04/ubuntu-15.04.tar.xz"
     cpus = 2
     memory = "512mib"
 

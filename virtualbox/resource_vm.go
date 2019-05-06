@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -50,9 +51,10 @@ func resourceVM() *schema.Resource {
 				ForceNew: true,
 			},
 			"url": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:       schema.TypeString,
+				Optional:   true,
+				ForceNew:   true,
+				Deprecated: "Use the \"image\" option with a URL",
 			},
 			"optical_disks": &schema.Schema{
 				Type:        schema.TypeList,
@@ -159,34 +161,21 @@ func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 var imageOpMutex sync.Mutex
 
 func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
-	/* TODO: allow partial updates */
-	var _, err = os.Stat(d.Get("image").(string))
-	if os.IsNotExist(err) {
-		if len(d.Get("url").(string)) > 0 {
-			if len(d.Get("url").(string)) > 0 {
-				path := d.Get("image").(string)
-				url := d.Get("url").(string)
-				// Create the file
-				out, err := os.Create(path)
-				if err != nil {
-					return err
-				}
-				defer out.Close()
-				// Get the data
-				resp, err := http.Get(url)
-				if err != nil {
-					return err
-				}
-				defer resp.Body.Close()
-				// Writer the body to file
-				_, err = io.Copy(out, resp.Body)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
 	image := d.Get("image").(string)
+
+	if addr, exists := d.GetOk("url"); exists {
+		image = addr.(string)
+	}
+
+	u, err := url.Parse(image)
+	if err != nil {
+		return fmt.Errorf("[Error] Could not parse image URL: %v", err)
+	}
+
+	imagePath, err := fetchIfRemote(u)
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to fetch remote image: %v", err)
+	}
 
 	/* Get gold folder and machine folder */
 	usr, err := user.Current()
@@ -201,15 +190,15 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 
 	/* Unpack gold image to gold folder */
 	imageOpMutex.Lock() // Sequentialize image unpacking to avoid conflicts
-	goldFileName := filepath.Base(image)
+	goldFileName := filepath.Base(imagePath)
 	goldName := strings.TrimSuffix(goldFileName, filepath.Ext(goldFileName))
 	if filepath.Ext(goldName) == ".tar" {
 		goldName = strings.TrimSuffix(goldName, ".tar")
 	}
 	goldPath := filepath.Join(goldFolder, goldName)
-	err = unpackImage(image, goldPath)
+	err = unpackImage(imagePath, goldPath)
 	if err != nil {
-		log.Printf("[ERROR] Unpack image %s: %s", image, err.Error())
+		log.Printf("[ERROR] Unpack image %s: %s", imagePath, err.Error())
 		imageOpMutex.Unlock()
 		return err
 	}
@@ -788,4 +777,47 @@ func newVMStateRefreshFunc(
 
 		return nil, "", nil
 	}
+}
+
+func fetchIfRemote(u *url.URL) (string, error) {
+	// If the schema is empty, treat it as a local path, otherwise
+	// use it as a remote.
+	if u.Scheme == "" {
+		return u.Path, nil
+	}
+
+	// TODO: Add special handing for other schemes, such as
+	// 		 s3, gcs, (s)ftp(s).
+	// We want to quit if the scheme is not currently supported.
+	switch u.Scheme {
+	case "http", "https":
+		break
+	default:
+		return "", fmt.Errorf("unsupported scheme %s", u.Scheme)
+	}
+
+	_, file := filepath.Split(u.Path)
+
+	// if the file is not found, and the error is unexpected, return
+	if _, err := os.Stat(file); err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+
+	f, err := os.Create(file)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		return "", err
+	}
+
+	return file, nil
 }
