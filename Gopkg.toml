@@ -12,7 +12,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/pyToshka/go-virtualbox"
+  name = "github.com/terra-farm/go-virtualbox"
 
 [[constraint]]
   name = "github.com/smartystreets/goconvey"

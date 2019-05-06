@@ -19,7 +19,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	vbox "github.com/pyToshka/go-virtualbox"
+	vbox "github.com/terra-farm/go-virtualbox"
 )
 
 var (
