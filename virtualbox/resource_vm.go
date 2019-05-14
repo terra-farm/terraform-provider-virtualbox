@@ -196,9 +196,13 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	goldPath := filepath.Join(goldFolder, goldName)
+<<<<<<< HEAD
 	err = unpackImage(imagePath, goldPath)
 	if err != nil {
 		log.Printf("[ERROR] Unpack image %s: %s", imagePath, err.Error())
+=======
+	if err = unpackImage(image, goldPath); err != nil {
+>>>>>>> 2b5afbb18c2b4e46f28135d58c7aabfef54ff797
 		imageOpMutex.Unlock()
 		return errLogf("Unpacking image %s: %v", image, err)
 	}
@@ -225,11 +229,19 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 		vbm = "VBoxManage"
 		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
 			vbm = filepath.Join(p, "VBoxManage.exe")
+<<<<<<< HEAD
 		}
 		setuiid := exec.Command(vbm + "internalcommands sethduuid " + src)
 		if err := setuiid.Run(); err != nil {
 			return errLogf("Unable to set UIID: %v", err)
 		}
+=======
+		}
+		setuiid := exec.Command(vbm + "internalcommands sethduuid " + src)
+		if err := setuiid.Run(); err != nil {
+			return errLogf("Unable to set UIID: %v", err)
+		}
+>>>>>>> 2b5afbb18c2b4e46f28135d58c7aabfef54ff797
 
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err := vbox.CloneHD(src, target)
