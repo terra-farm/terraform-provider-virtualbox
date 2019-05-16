@@ -13,9 +13,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
-type Image struct {
+type image struct {
 	// Image URL where to download from
 	URL string
 	// Checksum of the image, used to check integrity after downloading it
@@ -44,11 +46,9 @@ func unpackImage(image, toDir string) error {
 		cmd := exec.Command("tar", "-xv", "-C", toDir, "-f", image)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		err = cmd.Run()
-		if err != nil {
-			log.Printf("[ERROR] Unpacking Gold image %s\n", fp.Name())
-			log.Println(err.Error())
-			return err
+
+		if err := cmd.Run(); err != nil {
+			return errors.Wrapf(err, "unpacking gold image %s", fp.Name())
 		}
 	}
 	return nil
@@ -57,27 +57,23 @@ func unpackImage(image, toDir string) error {
 func gatherDisks(path string) ([]string, error) {
 	VDIs, err := filepath.Glob(filepath.Join(path, "**.vdi"))
 	if err != nil {
-		log.Printf("[ERROR] Get *.vdi in path '%s': %s", path, err.Error())
-		return nil, err
+		return nil, errors.Wrapf(err, "get *.vdi in '%s", path)
 	}
 	VMDKs, err := filepath.Glob(filepath.Join(path, "**.vmdk"))
 	if err != nil {
-		log.Printf("[ERROR] Get *.vmdk in path '%s': %s", path, err.Error())
-		return nil, err
+		return nil, errors.Wrapf(err, "get *.vmdk in path '%s'", path)
 	}
 	disks := append(VDIs, VMDKs...)
 	if len(disks) == 0 {
-		err = fmt.Errorf("No VM disk files (*.vdi, *.vmdk) found in path '%s'", path)
-		log.Printf("[ERROR] %s", err.Error())
-		return nil, err
+		return nil, errors.Wrapf(err,
+			"no VM disk files (*.vdi, *.vmdk) found in path '%s'", path)
 	}
 	return disks, nil
 }
-func (img *Image) verify() error {
+func (img *image) verify() error {
 	// Makes sure the file cursor is positioned at the beginning of the file
-	_, err := img.file.Seek(0, 0)
-	if err != nil {
-		return err
+	if _, err := img.file.Seek(0, 0); err != nil {
+		return errors.Wrap(err, "can't seek image file")
 	}
 
 	log.Printf("[DEBUG] Verifying image checksum...")
@@ -93,17 +89,16 @@ func (img *Image) verify() error {
 	case "sha512":
 		hasher = sha512.New()
 	default:
-		return fmt.Errorf("[ERROR] Crypto algorithm no supported: %s", img.ChecksumType)
+		return fmt.Errorf(" Crypto algorithm no supported: %s", img.ChecksumType)
 	}
-	_, err = io.Copy(hasher, img.file)
-	if err != nil {
-		return err
+
+	if _, err := io.Copy(hasher, img.file); err != nil {
+		return errors.Wrap(err, "cannot hash image file")
 	}
 
 	result := fmt.Sprintf("%x", hasher.Sum(nil))
-
 	if result != img.Checksum {
-		return fmt.Errorf("[ERROR] Checksum does not match\n Result: %s\n Expected: %s", result, img.Checksum)
+		return fmt.Errorf("checksum does not match\n Result: %s\n Expected: %s", result, img.Checksum)
 	}
 
 	return nil
