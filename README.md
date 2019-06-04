@@ -34,7 +34,7 @@ Published documentation is located on the [Terra-Farm website](https://terra-far
 
 - `name`, string, required: The name of the virtual machine.
 - `image`, string, required: The place of the image file (archive or vagrant box).
-  This can be a remote resource (http/https), or local location. (ex. [Ubuntu Virtualbox image](https://github.com/ccll/terraform-provider-virtualbox-images/releases]))
+  This can be a remote resource (http/https), or local location. (ex. [Ubuntu Virtualbox image](https://github.com/ccll/terraform-provider-virtualbox-images/releases))
 - `url`, DEPRECATED - USE `image`, string, optional, default not set: The url for downloaded vagrant box from external resource. Overrides `image` if set.
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human friendly units like 'MB', 'MiB'.
