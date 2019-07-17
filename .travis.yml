@@ -1,8 +1,10 @@
 dist: trusty
 sudo: false
 language: go
+
 go:
-  - 1.11.4
+- "1.12.4"
+
 os:
   - linux
   - osx
@@ -12,15 +14,17 @@ before_install:
     openssl aes-256-cbc -K $encrypted_76567b581e11_key -iv $encrypted_76567b581e11_iv -in gogetcookie.sh.enc -out scripts/gogetcookie.sh -d;
   fi
 
+env:
+- GO111MODULE=on
+
 install:
 # This script is used by the Travis build to install a cookie for
 # go.googlesource.com so rate limits are higher when using `go get` to fetch
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933#issuecomment-199429151
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then bash scripts/gogetcookie.sh ; fi
-- go get github.com/golang/dep/cmd/dep
+- go get ./...
 - go get github.com/mitchellh/gox
-- dep ensure
 - go vet
 - gox -os "freebsd darwin linux windows" -arch "386 amd64"
 
