@@ -41,93 +41,107 @@ func resourceVM() *schema.Resource {
 		Delete: resourceVMDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": &schema.Schema{
+
+			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"image": &schema.Schema{
+
+			"image": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"url": &schema.Schema{
-				Type:       schema.TypeString,
-				Optional:   true,
-				ForceNew:   true,
+
+			"url": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
 				Deprecated: "Use the \"image\" option with a URL",
 			},
-			"optical_disks": &schema.Schema{
+
+			"optical_disks": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "List of Optical Disks to attach",
 				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
-			"cpus": &schema.Schema{
+
+			"cpus": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  "2",
 			},
 
-			"memory": &schema.Schema{
+			"memory": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "512mib",
 			},
 
-			"status": &schema.Schema{
+			"status": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "running",
 			},
 
-			"user_data": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
-			},
-			"checksum": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
-			},
-			"checksum_type": &schema.Schema{
+			"user_data": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
 			},
 
-			"network_adapter": &schema.Schema{
+			"checksum": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
+			"checksum_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "",
+			},
+
+			"network_adapter": {
 				Type:     schema.TypeList,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"type": &schema.Schema{
+
+						"type": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
-						"device": &schema.Schema{
+
+						"device": {
 							Type:     schema.TypeString,
 							Optional: true,
 							Default:  "IntelPro1000MTServer",
 						},
-						"host_interface": &schema.Schema{
+
+						"host_interface": {
 							Type:     schema.TypeString,
 							Optional: true,
 						},
-						"status": &schema.Schema{
+
+						"status": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"mac_address": &schema.Schema{
+
+						"mac_address": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"ipv4_address": &schema.Schema{
+
+						"ipv4_address": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"ipv4_address_available": &schema.Schema{
+
+						"ipv4_address_available": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -135,7 +149,7 @@ func resourceVM() *schema.Resource {
 				},
 			},
 
-			"boot_order": &schema.Schema{
+			"boot_order": {
 				Type:        schema.TypeList,
 				Optional:    true,
 				Description: "Boot order, max 4 slots, each in [none, floopy, dvd, disk, net]",
