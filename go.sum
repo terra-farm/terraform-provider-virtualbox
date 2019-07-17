@@ -182,8 +182,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/svanharmelen/jsonapi v0.0.0-20180618144545-0c0828c3f16d/go.mod h1:BSTlc8jOjh0niykqEGVXOLXdi9o0r0kR8tCYiMvjFgw=
-github.com/terra-farm/go-virtualbox v0.0.0-20180710063303-80eb74948464 h1:M6p2lmcZpB253R4ti3k1Mtogbxal682Qzy5S8OmIMIw=
-github.com/terra-farm/go-virtualbox v0.0.0-20180710063303-80eb74948464/go.mod h1:n9ys6nh29svstnUIplHLKTsBIuzfKNe7+HqSUledyto=
+github.com/terra-farm/go-virtualbox v0.0.1 h1:e9/t07PCwgKCdnX4EGEoMaVxchyf4rtxUejNUjv4keM=
+github.com/terra-farm/go-virtualbox v0.0.1/go.mod h1:VVtOtFdsTm8CoNSxKsRa50Lm0ADITaRwsQcIWD6BpQE=
 github.com/terraform-providers/terraform-provider-aws v1.29.0/go.mod h1:uvqaeKnm2ydZ2LuKuW1NDNBu6heC/7IDGXWm36/6oKs=
 github.com/terraform-providers/terraform-provider-openstack v1.15.0/go.mod h1:2aQ6n/BtChAl1y2S60vebhyJyZXBsuAI5G4+lHrT1Ew=
 github.com/terraform-providers/terraform-provider-template v1.0.0/go.mod h1:/J+B8me5DCMa0rEBH5ic2aKPjhtpWNeScmxFJWxB1EU=
