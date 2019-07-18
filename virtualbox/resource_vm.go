@@ -240,9 +240,9 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
 			vbm = filepath.Join(p, "VBoxManage.exe")
 		}
-		setuiid := exec.Command(vbm + "internalcommands sethduuid " + src)
-		if err := setuiid.Run(); err != nil {
-			return errLogf("Unable to set UIID: %v", err)
+		setUUIDCmd := exec.Command(vbm, "internalcommands", "sethduuid", src)
+		if err := setUUIDCmd.Run(); err != nil {
+			return errLogf("Unable to set UUID: %v", err)
 		}
 
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
