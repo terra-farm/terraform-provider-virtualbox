@@ -8,8 +8,8 @@ resource "virtualbox_vm" "node" {
     user_data = "${file("user_data")}"
 
     network_adapter {
-        type = "bridged",
-        host_interface = "en0",
+        type = "hostonly",
+        host_interface = "vboxnet1",
     }
 }
 
