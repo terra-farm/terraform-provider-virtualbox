@@ -18,7 +18,6 @@ Published documentation is located on the [Terra-Farm website](https://terra-far
 
 1. git clone https://github.com/terra-farm/terraform-provider-virtualbox
 1. cd terraform-provider-virtualbox
-1. dep ensure
 1. go build
 1. mv terraform-provider-virtualbox examples/
 1. cd examples/
