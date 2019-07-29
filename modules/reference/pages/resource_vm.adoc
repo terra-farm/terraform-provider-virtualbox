@@ -4,28 +4,25 @@
 
 ```hcl
 resource "virtualbox_vm" "node" {
-    count = 2
-    name = "${format("node-%02d", count.index+1)}"
+  count     = 2
+  name      = format("node-%02d", count.index + 1)
+  image     = "https://app.vagrantup.com/ubuntu/boxes/bionic64/versions/20180903.0.0/providers/virtualbox.box"
+  cpus      = 2
+  memory    = "512 mib"
+  user_data = file("user_data")
 
-    image = "https://github.com/ccll/terraform-provider-virtualbox-images/releases/download/ubuntu-15.04/ubuntu-15.04.tar.xz"
-    cpus = 2
-    memory = "512mib"
-
-    network_adapter {
-        type = "nat"
-    }
-
-    network_adapter {
-        type = "bridged"
-        host_interface = "en0"
-    }
-
-    optical_disks = ["./cloudinit.iso"]
+  network_adapter {
+    type           = "hostonly"
+    host_interface = "vboxnet1"
+  }
 }
 
 output "IPAddr" {
-    # Get the IPv4 address of the bridged adapter (the 2nd one) on 'node-02'
-    value = "${element(virtualbox_vm.node.*.network_adapter.1.ipv4_address, 1)}"
+  value = element(virtualbox_vm.node.*.network_adapter.0.ipv4_address, 1)
+}
+
+output "IPAddr_2" {
+  value = element(virtualbox_vm.node.*.network_adapter.0.ipv4_address, 2)
 }
 ```
 
