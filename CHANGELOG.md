@@ -1,9 +1,29 @@
-# v.0.1.2
+# v0.2.0 (to be released)
+
+- Add support for Terraform v0.12
+- Releases automated via Travis CI after the migration of the repository to the Terra-Farm Github organization
+
+# v0.1.6
+
+- Adding optical disks property to `virtualbox_vm` resource.
+
+# v0.1.5
+
+- Fixes for better automated releases via Travis CI
+
+# v0.1.4
+
+- Added code coverage generation
+
+# v0.1.3
+
+- Releases automated via Travis CI
+
+# v0.1.2
+
 - Add support for using external vagrant box and archives as source for deploy
-
-# v.0.1.1.1
-
 - Add support for Terraform v0.9.5
+- Activate Travis CI builds
 
 # v0.1.1
 
