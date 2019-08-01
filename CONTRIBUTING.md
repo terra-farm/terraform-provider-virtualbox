@@ -26,3 +26,13 @@ table of contents.
 *NOTE:* When documentation changes are integrated on the `master` branch, these will not become visible on the
 website. A rebuilt of the [master site](https://github.com/terra-farm/terra-farm.github.io) is needed to pull 
 the documentation changes for each provider.
+
+# Creating a release
+
+To create and publish a new release on Github, a committer only needs to check one item:
+
+* Verify that the commit for the release builds succesfully on [Travis CI](https://travis-ci.org/terra-farm/terraform-provider-virtualbox).
+
+If the commit builds correctly, then tag this commit as version `vX.Y.Z`. Make sure the version number
+starts with the lowercase `v`. Push the tag to the Github remote and Travis will build again but also
+publish the binaries as a release on Github.
