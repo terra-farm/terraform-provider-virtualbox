@@ -29,7 +29,6 @@ script:
 - make build
 - make test
 - make vet
-#- go test -race -coverprofile=coverage.txt -covermode=atomic
 
 matrix:
   fast_finish: true

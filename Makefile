@@ -6,7 +6,7 @@ build: fmtcheck
 	go install
 
 test: fmtcheck
-	go test -i -race || exit 1
+	go test -i -race -coverprofile=coverage.txt -covermode=atomic || exit 1
 
 testacc: fmtcheck
 	TF_ACC=1 go test -v $(TESTARGS) -timeout 120m
