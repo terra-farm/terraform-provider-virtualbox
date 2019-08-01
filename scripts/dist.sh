@@ -10,7 +10,7 @@ case "${OSTYPE}" in
   *)        echo "unknown: ${OSTYPE}" ;;
 esac
 
-cp "${GOPATH}/bin/terraform-provider-xenserver" "dist/terraform-provider-xenserver-${TRAVIS_TAG}-${OS}_amd64"
-sha256sum "dist/terraform-provider-xenserver-${TRAVIS_TAG}-${OS}_amd64" | awk '{ print $1 }' > "dist/terraform-provider-xenserver-${TRAVIS_TAG}-${OS}_amd64.sha256sum"
+cp "${GOPATH}/bin/terraform-provider-virtualbox" "dist/terraform-provider-virtualbox-${TRAVIS_TAG}-${OS}_amd64"
+sha256sum "dist/terraform-provider-virtualbox-${TRAVIS_TAG}-${OS}_amd64" | awk '{ print $1 }' > "dist/terraform-provider-virtualbox-${TRAVIS_TAG}-${OS}_amd64.sha256sum"
 ls -lsa dist/
-cat "dist/terraform-provider-xenserver-${TRAVIS_TAG}-${OS}_amd64.sha256sum"
+cat "dist/terraform-provider-virtualbox-${TRAVIS_TAG}-${OS}_amd64.sha256sum"
