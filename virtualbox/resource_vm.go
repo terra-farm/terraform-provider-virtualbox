@@ -55,9 +55,9 @@ func resourceVM() *schema.Resource {
 			},
 
 			"url": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:       schema.TypeString,
+				Optional:   true,
+				ForceNew:   true,
 				Deprecated: "Use the \"image\" option with a URL",
 			},
 
