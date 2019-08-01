@@ -1,5 +1,6 @@
 .vendor
 vendor/
+dist/
 *.sublime-workspace
 *.log
 *.tfstate*
@@ -9,7 +10,7 @@ vendor/
 /examples/ubuntu-15.04.tar.xz
 /examples/*
 /provider/testdata/
-/terraform-provider-virtualbox
+/terraform-provider-virtualbox*
 .idea/
 .DS_Store
 .python-version
