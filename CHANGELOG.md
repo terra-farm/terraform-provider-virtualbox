@@ -1,4 +1,4 @@
-# v0.2.0 (to be released)
+# v0.2.0
 
 - Add support for Terraform v0.12
 - Releases automated via Travis CI after the migration of the repository to the Terra-Farm Github organization
