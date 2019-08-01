@@ -24,12 +24,12 @@ install:
 # See: https://github.com/golang/go/issues/12933#issuecomment-199429151
 - if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then bash scripts/gogetcookie.sh ; fi
 - go get ./...
-- go get github.com/mitchellh/gox
-- go vet
-- gox -os "freebsd darwin linux windows" -arch "386 amd64"
 
 script:
-- go test -race -coverprofile=coverage.txt -covermode=atomic
+- make build
+- make test
+- make vet
+#- go test -race -coverprofile=coverage.txt -covermode=atomic
 
 matrix:
   fast_finish: true
@@ -39,14 +39,19 @@ matrix:
 after_success:
 - bash <(curl -s https://codecov.io/bash)
 
+before_deploy:
+- if [ "${TRAVIS_OS_NAME}" = "osx" ]; then sudo ln -s /usr/local/Cellar/coreutils/*/libexec/gnubin/sha256sum /usr/local/bin/sha256sum ; fi
+- make dist
+
 deploy:
   provider: releases
+  draft: true
   api_key:
     secure: J2tdeoge01q3exGzEGD0e0kC1NBivOA4EBOOgBIfZ2gpxPkfCULMDIUsfecvD5HMo/HR15AaYAqFmiugdc/Bhu7qNcP2PKQR8UY3SolEdSSWorREPtWwhtfpVNyquMutGGtEgIjaYGbT+n/vt8ht06gbwpRjc0Ujpd0D636w4x2hswnx/68sJTuVJ21fPmZphuD00EqCLewAhHw7PYDqhf5IeNo4sirCrq/xYJ6OYG9ew/7g/gMJGtv/dIt5SRnOaUh7t6yGn4mGHbh292yfnCU+RH+hsyaTE0ZLkGF/AO7bFTxNZ3hF4ozA+YGJXgw4p5iudHsQHdx1Kn/Cc35BSFGMLehkXhR8TRhri4Iyha0IZupGpL3qbet27sXMiM8/mPFbMXdvSdjHfhy2FC6hIQcyQ2nLC110Ss2jDr6kgsGQkLHoYOOZTlh9TPQLiDidCPai5x6oUK/kkd0nc6zMUV2ODLRr7oNH0c+odL9Uo+gaYWAftJ80T8ugDV8p8oRAwVOsfSM+ZNjNrGjkM13RHkvjV8ndjokSXus+kFC/cqSSi+nENOjo6Sv33uKeHIRmlP0t24G/OoXpfD1MNd4wiECnFJ5Kcot1Fofd9lGcph6Igdc2kjv0l6Rx/HdnbnOcPANX5aumHnTLcMe/62Uy3Cdk/C9NanVuFADm4LP8VAw=
-  file: terraform-provider-virtualbox*
+  file: dist/terraform-provider-virtualbox*
   file_glob: true
   skip_cleanup: true
-
+  tag_name: $TRAVIS_TAG
   on:
     repo: terra-farm/terraform-provider-virtualbox
     tags: true
