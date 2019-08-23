@@ -8,7 +8,7 @@ resource "virtualbox_vm" "node" {
 
   network_adapter {
     type           = "hostonly"
-    host_interface = "vboxnet1"
+    host_interface = "vboxnet0"
   }
 }
 
