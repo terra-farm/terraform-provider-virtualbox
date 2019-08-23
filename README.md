@@ -10,6 +10,15 @@ Donated to the `terra-farm` group by [`ccll`](https://github.com/ccll)
 
 Published documentation is located on the [Terra-Farm website](https://terra-farm.github.io/provider-virtualbox/).
 
+# Requirements
+
+1. vboxnet1 should be exist with enable DHCP server.
+2. Version VirtualBox kernel modules do match this version of VirtualBox:
+
+- Run modinfo vboxdrv.
+- Run apt-cache policy virtualbox
+- Version should be equals
+
 # How to install
 
 Installation instructions for the Terra-Farm thirdparty providers can be found on the 
