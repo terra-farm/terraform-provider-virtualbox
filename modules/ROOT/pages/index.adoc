@@ -10,5 +10,5 @@ Donated to the `terra-farm` group by https://github.com/ccll[`ccll`]
 2. Version VirtualBox kernel modules do match this version of VirtualBox:
 
 - Run modinfo vboxdrv.
-- Run apt-cache policy virtualbox
+- Run apt-cache policy virtualbox or yum list virtualbox
 - Version should be equals
