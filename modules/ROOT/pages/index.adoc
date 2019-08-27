@@ -3,3 +3,12 @@
 Inspired by https://github.com/hooklift/terraform-provider-vix[terraform-provider-vix]
 
 Donated to the `terra-farm` group by https://github.com/ccll[`ccll`]
+
+# Requirements
+
+1. vboxnet1 should be exist with enable DHCP server.
+2. Version VirtualBox kernel modules do match this version of VirtualBox:
+
+- Run modinfo vboxdrv.
+- Run apt-cache policy virtualbox
+- Version should be equals
