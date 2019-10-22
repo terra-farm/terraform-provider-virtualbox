@@ -126,6 +126,11 @@ func resourceVM() *schema.Resource {
 							Optional: true,
 						},
 
+						"nat_network": {
+							Type:     schema.TypeString,
+							Optional: true,
+						},
+
 						"status": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -513,6 +518,8 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 			return vbox.NICNetBridged, nil
 		case "nat":
 			return vbox.NICNetNAT, nil
+		case "natnetwork":
+			return vbox.NICNetNATNetwork, nil
 		case "hostonly":
 			return vbox.NICNetHostonly, nil
 		case "internal":
@@ -565,6 +572,15 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 			}
 		}
 
+		/* 'natnetwork' network need property 'nat_network' been set */
+		if adapter.Network == vbox.NICNetNATNetwork {
+			var ok bool
+			adapter.NatNetwork, ok = d.Get(prefix + "nat_network").(string)
+			if !ok || adapter.NatNetwork == "" {
+				err = fmt.Errorf("'nat_network' property not set for '#%d' network adapter", i)
+			}
+		}
+
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -588,6 +604,8 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			return "bridged"
 		case vbox.NICNetNAT:
 			return "nat"
+		case vbox.NICNetNATNetwork:
+			return "natnetwork"
 		case vbox.NICNetHostonly:
 			return "hostonly"
 		case vbox.NICNetInternal:
@@ -679,6 +697,7 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			out["type"] = vboxToTfNetworkType(nic.Network)
 			out["device"] = vboxToTfVdevice(nic.Hardware)
 			out["host_interface"] = nic.HostInterface
+			out["nat_network"] = nic.NatNetwork
 			out["mac_address"] = nic.MacAddr
 
 			osNic, ok := osNicMap[nic.MacAddr]
