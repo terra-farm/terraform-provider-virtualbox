@@ -25,7 +25,8 @@ func init() {
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"virtualbox_vm": resourceVM(),
+			"virtualbox_vm":         resourceVM(),
+			"virtualbox_natnetwork": resourceNatNetwork(),
 		},
 	}
 }
