@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -581,6 +582,21 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 	return adapters, nil
 }
 
+// countRuntimeNics will return the number of NICs found after VM successfully started.
+func countRuntimeNICs(vm *vbox.Machine) (int, error) {
+	count, err := vm.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count")
+
+	if err != nil {
+		return 0, err
+	}
+
+	if count == nil {
+		return 0, nil
+	}
+
+	return strconv.Atoi(*count)
+}
+
 func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 	vboxToTfNetworkType := func(netType vbox.NICNetwork) string {
 		switch netType {
@@ -618,6 +634,15 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 	/* Collect NIC data from guest OS, available only when VM is running */
 	if vm.State == vbox.Running {
+		nicCount, err := countRuntimeNICs(vm)
+		if err != nil {
+			return err
+		}
+
+		if nicCount < len(vm.NICs) {
+			return nil
+		}
+
 		/* NICs in guest OS (eth0, eth1, etc) does not neccessarily have save
 		order as in VirtualBox (nic1, nic2, etc), so we use MAC address to setup a mapping */
 		type OsNicData struct {
@@ -627,8 +652,7 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 		osNicMap := make(map[string]OsNicData) // map from MAC address to data
 
 		var errs []error
-
-		for i := 0; i < len(vm.NICs); i++ {
+		for i := 0; i < nicCount; i++ {
 			var osNic OsNicData
 
 			/* NIC MAC address */
