@@ -1,0 +1,37 @@
+# Workflow used as Continous Integration every time we have a PR.
+name: CI
+# Build whenever someone has pushed something to the repo.
+# TODO: Maybe it should only be `pull-request`?
+on: [push]
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - uses: actions-contrib/golangci-lint@master
+      with:
+        args: run
+    
+  build:
+    name: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # We only support the latest version of all platforms.
+        os:
+        - ubunty-latest
+        - windows-latest
+        - macOS-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+    - uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+    - run: go build
+  
