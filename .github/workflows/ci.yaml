@@ -13,8 +13,11 @@ jobs:
       with:
         fetch-depth: 1
     - uses: actions-contrib/golangci-lint@master
+<<<<<<< HEAD
       with:
         args: run
+=======
+>>>>>>> Initial support for Github Actions.
     
   build:
     name: build
