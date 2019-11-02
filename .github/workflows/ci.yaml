@@ -23,7 +23,7 @@ jobs:
       matrix:
         # We only support the latest version of all platforms.
         os:
-        - ubunty-latest
+        - ubuntu-latest
         - windows-latest
         - macOS-latest
     steps:
