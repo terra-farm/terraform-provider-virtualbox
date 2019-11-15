@@ -18,8 +18,8 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
 	vbox "github.com/terra-farm/go-virtualbox"
 )
