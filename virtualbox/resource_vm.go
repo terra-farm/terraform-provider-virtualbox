@@ -492,9 +492,9 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
 
 	vm.VRAM = 20 // Always 10MiB for vram
-	vm.Flag = vbox.F_acpi | vbox.F_ioapic | vbox.F_rtcuseutc | vbox.F_pae |
-		vbox.F_hwvirtex | vbox.F_nestedpaging | vbox.F_largepages | vbox.F_longmode |
-		vbox.F_vtxvpid | vbox.F_vtxux
+	vm.Flag = vbox.ACPI | vbox.IOAPIC | vbox.RTCUSEUTC | vbox.PAE |
+		vbox.HWVIRTEX | vbox.NESTEDPAGING | vbox.LARGEPAGES | vbox.LONGMODE |
+		vbox.VTXVPID | vbox.VTXUX
 	vm.NICs, err = netTfToVbox(d)
 	userData := d.Get("user_data").(string)
 	if userData != "" {
@@ -584,17 +584,17 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 
 // countRuntimeNics will return the number of NICs found after VM successfully started.
 func countRuntimeNICs(vm *vbox.Machine) (int, error) {
-	count, err := vm.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count")
+	count, err := vbox.GetGuestProperty(vm.UUID, "/VirtualBox/GuestInfo/Net/Count")
 
 	if err != nil {
 		return 0, err
 	}
 
-	if count == nil {
+	if count == "" {
 		return 0, nil
 	}
 
-	return strconv.Atoi(*count)
+	return strconv.Atoi(count)
 }
 
 func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
@@ -656,38 +656,38 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			var osNic OsNicData
 
 			/* NIC MAC address */
-			macAddr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
+			macAddr, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if macAddr == nil || *macAddr == "" {
+			if macAddr == "" {
 				return nil
 			}
 
 			/* NIC status */
-			status, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
+			status, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if status == nil || *status == "" {
+			if status == "" {
 				return nil
 			}
-			osNic.status = strings.ToLower(*status)
+			osNic.status = strings.ToLower(status)
 
 			/* NIC ipv4 address */
-			ipv4Addr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
+			ipv4Addr, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if ipv4Addr == nil || *ipv4Addr == "" {
+			if ipv4Addr == "" {
 				return nil
 			}
-			osNic.ipv4Addr = *ipv4Addr
+			osNic.ipv4Addr = ipv4Addr
 
-			osNicMap[*macAddr] = osNic
+			osNicMap[macAddr] = osNic
 		}
 
 		if len(errs) > 0 {
