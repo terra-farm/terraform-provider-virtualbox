@@ -26,13 +26,16 @@ jobs:
         - ubuntu-latest
         - windows-latest
         - macOS-latest
+        go:
+        - "1.12"
+        - "1.13"
     steps:
     - uses: actions/checkout@v1
       with:
         fetch-depth: 1
     - uses: actions/setup-go@v1
       with:
-        go-version: 1.13
+        go-version: ${{ matrix.go }}
     - run: go build ./...
     - run: go test ./...
   
