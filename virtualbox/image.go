@@ -34,7 +34,10 @@ func unpackImage(image, toDir string) error {
 	finfo, _ := ioutil.ReadDir(toDir)
 	dirEmpty := len(finfo) == 0
 	if os.IsNotExist(err) || dirEmpty {
-		os.MkdirAll(toDir, 0740)
+		err := os.MkdirAll(toDir, 0740)
+		if err != nil {
+			return err
+		}
 		fp, err := os.Open(image)
 		if err != nil {
 			return err

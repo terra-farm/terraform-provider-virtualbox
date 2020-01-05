@@ -200,8 +200,14 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	goldFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/gold")
 	machineFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/machine")
-	os.MkdirAll(goldFolder, 0740)
-	os.MkdirAll(machineFolder, 0740)
+	err = os.MkdirAll(goldFolder, 0740)
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to create gold folder: %v", err)
+	}
+	err = os.MkdirAll(machineFolder, 0740)
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to create machine folder: %v", err)
+	}
 
 	// Unpack gold image to gold folder
 	imageOpMutex.Lock() // Sequentialize image unpacking to avoid conflicts
