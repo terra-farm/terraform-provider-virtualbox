@@ -200,8 +200,14 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 	goldFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/gold")
 	machineFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/machine")
-	os.MkdirAll(goldFolder, 0740)
-	os.MkdirAll(machineFolder, 0740)
+	err = os.MkdirAll(goldFolder, 0740)
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to create gold folder: %v", err)
+	}
+	err = os.MkdirAll(machineFolder, 0740)
+	if err != nil {
+		return fmt.Errorf("[ERROR] Unable to create machine folder: %v", err)
+	}
 
 	// Unpack gold image to gold folder
 	imageOpMutex.Lock() // Sequentialize image unpacking to avoid conflicts
@@ -337,19 +343,24 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	return resourceVMRead(d, meta)
 }
 
-func setState(d *schema.ResourceData, state vbox.MachineState) {
+func setState(d *schema.ResourceData, state vbox.MachineState) error {
+	var err error
 	switch state {
 	case vbox.Poweroff:
-		d.Set("status", "poweroff")
+		err = d.Set("status", "poweroff")
 	case vbox.Running:
-		d.Set("status", "running")
+		err = d.Set("status", "running")
 	case vbox.Paused:
-		d.Set("status", "paused")
+		err = d.Set("status", "paused")
 	case vbox.Saved:
-		d.Set("status", "saved")
+		err = d.Set("status", "saved")
 	case vbox.Aborted:
-		d.Set("status", "aborted")
+		err = d.Set("status", "aborted")
 	}
+	if err != nil {
+		return errLogf("Wait VM until ready: %v", err)
+	}
+	return nil
 }
 
 func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
@@ -370,19 +381,34 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	// 	return nil
 	// }
 
-	setState(d, vm.State)
-	d.Set("name", vm.Name)
-	d.Set("cpus", vm.CPUs)
+	err = setState(d, vm.State)
+	if err != nil {
+		return errLogf("can't set state: %v", err)
+	}
+	err = d.Set("name", vm.Name)
+	if err != nil {
+		return errLogf("can't set name: %v", err)
+	}
+	err = d.Set("cpus", vm.CPUs)
+	if err != nil {
+		return errLogf("can't set cpus: %v", err)
+	}
 	bytes := uint64(vm.Memory) * humanize.MiByte
 	repr := humanize.IBytes(bytes)
-	d.Set("memory", strings.ToLower(repr))
+	err = d.Set("memory", strings.ToLower(repr))
+	if err != nil {
+		return errLogf("can't set memory: %v", err)
+	}
 
 	userData, err := vm.GetExtraData("user_data")
 	if err != nil {
 		return errLogf("can't get user data: %v", err)
 	}
 	if userData != nil && *userData != "" {
-		d.Set("user_data", *userData)
+		err = d.Set("user_data", *userData)
+		if err != nil {
+			return errLogf("can't set user_data: %v", err)
+		}
 	}
 
 	if err = netVboxToTf(vm, d); err != nil {
@@ -410,7 +436,10 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 		break
 	}
 
-	d.Set("boot_order", vm.BootOrder)
+	err = d.Set("boot_order", vm.BootOrder)
+	if err != nil {
+		return errLogf("can't set boot_order: %v", err)
+	}
 
 	return nil
 }
@@ -492,9 +521,9 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
 
 	vm.VRAM = 20 // Always 10MiB for vram
-	vm.Flag = vbox.F_acpi | vbox.F_ioapic | vbox.F_rtcuseutc | vbox.F_pae |
-		vbox.F_hwvirtex | vbox.F_nestedpaging | vbox.F_largepages | vbox.F_longmode |
-		vbox.F_vtxvpid | vbox.F_vtxux
+	vm.Flag = vbox.ACPI | vbox.IOAPIC | vbox.RTCUSEUTC | vbox.PAE |
+		vbox.HWVIRTEX | vbox.NESTEDPAGING | vbox.LARGEPAGES | vbox.LONGMODE |
+		vbox.VTXVPID | vbox.VTXUX
 	vm.NICs, err = netTfToVbox(d)
 	userData := d.Get("user_data").(string)
 	if userData != "" {
@@ -584,17 +613,17 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 
 // countRuntimeNics will return the number of NICs found after VM successfully started.
 func countRuntimeNICs(vm *vbox.Machine) (int, error) {
-	count, err := vm.GetGuestProperty("/VirtualBox/GuestInfo/Net/Count")
+	count, err := vbox.GetGuestProperty(vm.UUID, "/VirtualBox/GuestInfo/Net/Count")
 
 	if err != nil {
 		return 0, err
 	}
 
-	if count == nil {
+	if count == "" {
 		return 0, nil
 	}
 
-	return strconv.Atoi(*count)
+	return strconv.Atoi(count)
 }
 
 func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
@@ -656,38 +685,38 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			var osNic OsNicData
 
 			/* NIC MAC address */
-			macAddr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
+			macAddr, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/MAC", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if macAddr == nil || *macAddr == "" {
+			if macAddr == "" {
 				return nil
 			}
 
 			/* NIC status */
-			status, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
+			status, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/Status", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if status == nil || *status == "" {
+			if status == "" {
 				return nil
 			}
-			osNic.status = strings.ToLower(*status)
+			osNic.status = strings.ToLower(status)
 
 			/* NIC ipv4 address */
-			ipv4Addr, err := vm.GetGuestProperty(fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
+			ipv4Addr, err := vbox.GetGuestProperty(vm.UUID, fmt.Sprintf("/VirtualBox/GuestInfo/Net/%d/V4/IP", i))
 			if err != nil {
 				errs = append(errs, err)
 				continue
 			}
-			if ipv4Addr == nil || *ipv4Addr == "" {
+			if ipv4Addr == "" {
 				return nil
 			}
-			osNic.ipv4Addr = *ipv4Addr
+			osNic.ipv4Addr = ipv4Addr
 
-			osNicMap[*macAddr] = osNic
+			osNicMap[macAddr] = osNic
 		}
 
 		if len(errs) > 0 {
@@ -720,7 +749,11 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			nics = append(nics, out)
 		}
 
-		d.Set("network_adapter", nics)
+		err = d.Set("network_adapter", nics)
+		if err != nil {
+			return errLogf("can't set network_adapter: %v", err)
+		}
+
 	} else {
 		// Assign NIC property to vbox structure and Terraform
 		nics := make([]map[string]interface{}, 0, 1)
@@ -740,7 +773,11 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			nics = append(nics, out)
 		}
 
-		d.Set("network_adapter", nics)
+		err := d.Set("network_adapter", nics)
+		if err != nil {
+			return errLogf("can't set network_adapter: %v", err)
+		}
+
 	}
 
 	return nil

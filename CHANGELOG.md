@@ -1,3 +1,9 @@
+# In progress
+
+- Updated to use the Terraform Plugin SDK
+- Test setup uses a mocking framework for easy testing
+- Migrated from Travis CI to Github Actions
+
 # v0.2.0
 
 - Add support for Terraform v0.12
