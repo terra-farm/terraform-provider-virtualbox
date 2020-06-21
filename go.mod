@@ -1,15 +1,15 @@
 module github.com/terra-farm/terraform-provider-virtualbox
 
-go 1.12
+go 1.14
 
 require (
 	github.com/dustin/go-humanize v1.0.0
-	github.com/gopherjs/gopherjs v0.0.0-20191106031601-ce3c9ade29de // indirect
-	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/terraform-plugin-sdk v1.3.0
-	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/pkg/errors v0.8.1
-	github.com/smartystreets/assertions v1.0.1 // indirect
-	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c
-	github.com/terra-farm/go-virtualbox v0.0.3
+	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
+	github.com/hashicorp/go-multierror v1.1.0
+	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/terraform-plugin-sdk v1.14.0
+	github.com/pkg/errors v0.9.1
+	github.com/smartystreets/assertions v1.1.1 // indirect
+	github.com/smartystreets/goconvey v1.6.4
+	github.com/terra-farm/go-virtualbox v0.0.4
 )
