@@ -8,8 +8,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var HelloText = "Hello, world!"
-
 func TestUnpackImage_gzip(t *testing.T) {
 	Convey("Unpack image to a temporary directory", t, func() {
 		dir, err := ioutil.TempDir("", "tfvbox-test-")

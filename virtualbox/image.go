@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+//nolint:unused
 type image struct {
 	// Image URL where to download from
 	URL string

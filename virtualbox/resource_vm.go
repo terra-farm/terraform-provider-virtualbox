@@ -343,19 +343,24 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 	return resourceVMRead(d, meta)
 }
 
-func setState(d *schema.ResourceData, state vbox.MachineState) {
+func setState(d *schema.ResourceData, state vbox.MachineState) error {
+	var err error
 	switch state {
 	case vbox.Poweroff:
-		d.Set("status", "poweroff")
+		err = d.Set("status", "poweroff")
 	case vbox.Running:
-		d.Set("status", "running")
+		err = d.Set("status", "running")
 	case vbox.Paused:
-		d.Set("status", "paused")
+		err = d.Set("status", "paused")
 	case vbox.Saved:
-		d.Set("status", "saved")
+		err = d.Set("status", "saved")
 	case vbox.Aborted:
-		d.Set("status", "aborted")
+		err = d.Set("status", "aborted")
 	}
+	if err != nil {
+		return errLogf("Wait VM until ready: %v", err)
+	}
+	return nil
 }
 
 func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
@@ -376,19 +381,34 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 	// 	return nil
 	// }
 
-	setState(d, vm.State)
-	d.Set("name", vm.Name)
-	d.Set("cpus", vm.CPUs)
+	err = setState(d, vm.State)
+	if err != nil {
+		return errLogf("can't set state: %v", err)
+	}
+	err = d.Set("name", vm.Name)
+	if err != nil {
+		return errLogf("can't set name: %v", err)
+	}
+	err = d.Set("cpus", vm.CPUs)
+	if err != nil {
+		return errLogf("can't set cpus: %v", err)
+	}
 	bytes := uint64(vm.Memory) * humanize.MiByte
 	repr := humanize.IBytes(bytes)
-	d.Set("memory", strings.ToLower(repr))
+	err = d.Set("memory", strings.ToLower(repr))
+	if err != nil {
+		return errLogf("can't set memory: %v", err)
+	}
 
 	userData, err := vm.GetExtraData("user_data")
 	if err != nil {
 		return errLogf("can't get user data: %v", err)
 	}
 	if userData != nil && *userData != "" {
-		d.Set("user_data", *userData)
+		err = d.Set("user_data", *userData)
+		if err != nil {
+			return errLogf("can't set user_data: %v", err)
+		}
 	}
 
 	if err = netVboxToTf(vm, d); err != nil {
@@ -416,7 +436,10 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 		break
 	}
 
-	d.Set("boot_order", vm.BootOrder)
+	err = d.Set("boot_order", vm.BootOrder)
+	if err != nil {
+		return errLogf("can't set boot_order: %v", err)
+	}
 
 	return nil
 }
@@ -726,7 +749,11 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			nics = append(nics, out)
 		}
 
-		d.Set("network_adapter", nics)
+		err = d.Set("network_adapter", nics)
+		if err != nil {
+			return errLogf("can't set network_adapter: %v", err)
+		}
+
 	} else {
 		// Assign NIC property to vbox structure and Terraform
 		nics := make([]map[string]interface{}, 0, 1)
@@ -746,7 +773,11 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			nics = append(nics, out)
 		}
 
-		d.Set("network_adapter", nics)
+		err := d.Set("network_adapter", nics)
+		if err != nil {
+			return errLogf("can't set network_adapter: %v", err)
+		}
+
 	}
 
 	return nil
