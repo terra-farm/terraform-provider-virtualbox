@@ -1,0 +1,35 @@
+<% wrap_layout :inner do %>
+    <% content_for :sidebar do %>
+      <div class="docs-sidebar hidden-print affix-top" role="complementary">
+        <ul class="nav docs-sidenav">
+          <li<%= sidebar_current("docs-home") %>>
+          <a href="/docs/providers/index.html">All Providers</a>
+          </li>
+  
+          <li<%= sidebar_current("docs-virtualbox-index") %>>
+          <a href="/docs/providers/virtualbox/index.html">Virtualbox Provider</a>
+          </li>
+  
+          <li<%= sidebar_current("docs-virtualbox-datasource") %>>
+            <a href="#">Data Sources</a>
+            <ul class="nav nav-visible">
+              <li<%= sidebar_current("docs-virtualbox-datasource") %>>
+                <a href="/docs/providers/virtualbox/d/virtualbox_data_source.html">virtualbox_data_source</a>
+              </li>
+            </ul>
+          </li>
+  
+          <li<%= sidebar_current("docs-virtualbox-resource") %>>
+          <a href="#">Resources</a>
+          <ul class="nav nav-visible">
+            <li<%= sidebar_current("docs-virtualbox-resource") %>>
+              <a href="/docs/providers/virtualbox/r/virtualbox_resource.html">virtualbox_resource</a>
+            </li>
+          </ul>
+          </li>
+        </ul>
+      </div>
+    <% end %>
+  
+    <%= yield %>
+    <% end %>
