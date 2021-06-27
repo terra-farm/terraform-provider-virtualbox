@@ -4,7 +4,7 @@
 package virtualbox
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	vbox "github.com/terra-farm/go-virtualbox"
 )
 
