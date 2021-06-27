@@ -40,6 +40,16 @@ resource "virtualbox_vm" "node" {
     type           = "hostonly"
     host_interface = "vboxnet1"
   }
+  network_adapter {
+    type           = "natnetwork"
+    nat_network    = virtualbox_natnetwork.vmnet10.name
+  }
+}
+
+resource "virtualbox_natnetwork" "vmnet10" {
+    name = "vmnet10"
+    dhcp = true
+    network = "192.168.6.0/24"
 }
 
 output "IPAddr" {
