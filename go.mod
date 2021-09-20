@@ -11,5 +11,5 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/assertions v1.1.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/terra-farm/go-virtualbox v0.0.4
+	github.com/terra-farm/go-virtualbox v0.0.5-0.20210628144304-5f2cd9661101
 )
