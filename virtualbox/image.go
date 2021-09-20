@@ -17,6 +17,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+// InvalidChecksumTypeError is returned when the passed checksum algorithm
+// type is not supported
+type InvalidChecksumTypeError string
+
+func (e InvalidChecksumTypeError) Error() string {
+	return fmt.Sprintf("invalid checksum algorithm: %q", string(e))
+}
+
 //nolint:unused
 type image struct {
 	// Image URL where to download from
@@ -26,7 +34,7 @@ type image struct {
 	// Algorithm use to check the checksum
 	ChecksumType string
 	// Internal file reference
-	file *os.File
+	file io.ReadSeeker
 }
 
 func unpackImage(image, toDir string) error {
@@ -75,11 +83,6 @@ func gatherDisks(path string) ([]string, error) {
 	return disks, nil
 }
 func (img *image) verify() error {
-	// Makes sure the file cursor is positioned at the beginning of the file
-	if _, err := img.file.Seek(0, 0); err != nil {
-		return errors.Wrap(err, "can't seek image file")
-	}
-
 	log.Printf("[DEBUG] Verifying image checksum...")
 	var hasher hash.Hash
 
@@ -93,7 +96,12 @@ func (img *image) verify() error {
 	case "sha512":
 		hasher = sha512.New()
 	default:
-		return fmt.Errorf(" Crypto algorithm no supported: %s", img.ChecksumType)
+		return InvalidChecksumTypeError(img.ChecksumType)
+	}
+
+	// Makes sure the file cursor is positioned at the beginning of the file
+	if _, err := img.file.Seek(0, 0); err != nil {
+		return errors.Wrap(err, "can't seek image file")
 	}
 
 	if _, err := io.Copy(hasher, img.file); err != nil {

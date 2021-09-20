@@ -1,6 +1,7 @@
 package virtualbox
 
 import (
+	"errors"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -69,4 +70,28 @@ func TestUnpackImage_xz(t *testing.T) {
 		})
 
 	})
+}
+
+func TestVerify(t *testing.T) {
+	testCases := map[string]struct {
+		img image
+		err error
+	}{
+		"invalid checksum type": {
+			img: image{
+				ChecksumType: "invalid",
+			},
+			err: InvalidChecksumTypeError("invalid"),
+		},
+		// TODO: Fill this with actual test cases which test verification of the
+		//       checksums.
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			if err := tc.img.verify(); !errors.Is(err, tc.err) {
+				t.Errorf("verify() = %v, want %v", err, tc.err)
+			}
+		})
+	}
 }
