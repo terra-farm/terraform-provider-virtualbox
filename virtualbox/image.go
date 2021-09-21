@@ -47,7 +47,7 @@ func unpackImage(image, toDir string) error {
 	if os.IsNotExist(err) || dirEmpty {
 		err := os.MkdirAll(toDir, 0740)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to create %s directory: %w", toDir, err)
 		}
 		fp, err := os.Open(image)
 		if err != nil {
@@ -62,7 +62,7 @@ func unpackImage(image, toDir string) error {
 		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
-			return errors.Wrapf(err, "unpacking gold image %s", fp.Name())
+			return fmt.Errorf("error unpacking gold image %s: %w", fp.Name(), err)
 		}
 	}
 	return nil
