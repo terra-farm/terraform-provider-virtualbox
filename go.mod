@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/dustin/go-humanize v1.0.0
+	github.com/go-test/deep v1.0.3
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hashicorp/hcl v1.0.0 // indirect
