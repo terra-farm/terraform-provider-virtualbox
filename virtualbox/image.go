@@ -13,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -77,11 +79,24 @@ func gatherDisks(path string) ([]string, error) {
 	}
 	disks := append(VDIs, VMDKs...)
 	if len(disks) == 0 {
-		return nil, errors.Wrapf(err,
-			"no VM disk files (*.vdi, *.vmdk) found in path '%s'", path)
+		return nil, fmt.Errorf(
+			"no VM disk files (*.vdi, *.vmdk) found in path %q", path)
 	}
-	return disks, nil
+	prioritized := ByDiskPriority(disks)
+	sort.Sort(prioritized)
+	return prioritized, nil
 }
+
+// ByDiskPriority adds a simple sort to make sure that configdisk is not first
+// in the returned boot order.
+type ByDiskPriority []string
+
+func (ss ByDiskPriority) Len() int      { return len(ss) }
+func (ss ByDiskPriority) Swap(i, j int) { ss[i], ss[j] = ss[j], ss[i] }
+func (ss ByDiskPriority) Less(i, j int) bool {
+	return !strings.Contains(ss[i], "configdrive")
+}
+
 func (img *image) verify() error {
 	log.Printf("[DEBUG] Verifying image checksum...")
 	var hasher hash.Hash
