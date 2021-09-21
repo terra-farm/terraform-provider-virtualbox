@@ -1,6 +1,7 @@
 package virtualbox
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -18,8 +19,9 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/pkg/errors"
 	vbox "github.com/terra-farm/go-virtualbox"
 )
@@ -35,11 +37,11 @@ func init() {
 
 func resourceVM() *schema.Resource {
 	return &schema.Resource{
-		Exists: resourceVMExists,
-		Create: resourceVMCreate,
-		Read:   resourceVMRead,
-		Update: resourceVMUpdate,
-		Delete: resourceVMDelete,
+		Exists:        resourceVMExists,
+		CreateContext: resourceVMCreate,
+		ReadContext:   resourceVMRead,
+		UpdateContext: resourceVMUpdate,
+		Delete:        resourceVMDelete,
 
 		Schema: map[string]*schema.Schema{
 
@@ -176,7 +178,7 @@ func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 var imageOpMutex sync.Mutex
 
-func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	image := d.Get("image").(string)
 
 	if addr, exists := d.GetOk("url"); exists {
@@ -185,28 +187,28 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 
 	u, err := url.Parse(image)
 	if err != nil {
-		return fmt.Errorf("[Error] Could not parse image URL: %v", err)
+		return diag.Errorf("could not parse image URL: %v", err)
 	}
 
 	imagePath, err := fetchIfRemote(u)
 	if err != nil {
-		return fmt.Errorf("[ERROR] Unable to fetch remote image: %v", err)
+		return diag.Errorf("unable to fetch remote image: %v", err)
 	}
 
 	/* Get gold folder and machine folder */
 	usr, err := user.Current()
 	if err != nil {
-		return errLogf("Get the current user: %v", err)
+		return diag.Errorf("unable to get the current user: %v", err)
 	}
 	goldFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/gold")
 	machineFolder := filepath.Join(usr.HomeDir, ".terraform/virtualbox/machine")
 	err = os.MkdirAll(goldFolder, 0740)
 	if err != nil {
-		return fmt.Errorf("[ERROR] Unable to create gold folder: %v", err)
+		return diag.Errorf("unable to create gold folder: %v", err)
 	}
 	err = os.MkdirAll(machineFolder, 0740)
 	if err != nil {
-		return fmt.Errorf("[ERROR] Unable to create machine folder: %v", err)
+		return diag.Errorf("unable to create machine folder: %v", err)
 	}
 
 	// Unpack gold image to gold folder
@@ -219,23 +221,22 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 
 	goldPath := filepath.Join(goldFolder, goldName)
 	if err = unpackImage(imagePath, goldPath); err != nil {
-		log.Printf("[ERROR] Unpack image %s: %s", imagePath, err.Error())
 		imageOpMutex.Unlock()
-		return errLogf("Unpacking image %s: %v", image, err)
+		return diag.Errorf("failed to unpack image %s: %v", image, err)
 	}
 	imageOpMutex.Unlock()
 
 	// Gather '*.vdi' and "*.vmdk" files from gold
 	goldDisks, err := gatherDisks(goldPath)
 	if err != nil {
-		return errLogf("Unable to gather disks: %v", err)
+		return diag.Errorf("unable to gather disks: %v", err)
 	}
 
 	// Create VM instance
 	name := d.Get("name").(string)
 	vm, err := vbox.CreateMachine(name, machineFolder)
 	if err != nil {
-		return errLogf("Create virtualbox VM %s: %v\n", name, err)
+		return diag.Errorf("can't create virtualbox VM %s: %v", name, err)
 	}
 
 	// Clone gold virtual disk files to VM folder
@@ -249,21 +250,21 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 		setUUIDCmd := exec.Command(vbm, "internalcommands", "sethduuid", src)
 		if err := setUUIDCmd.Run(); err != nil {
-			return errLogf("Unable to set UUID: %v", err)
+			return diag.Errorf("unable to set UUID: %v", err)
 		}
 
 		imageOpMutex.Lock() // Sequentialize image cloning to improve disk performance
 		err := vbox.CloneHD(src, target)
 		imageOpMutex.Unlock()
 		if err != nil {
-			return errLogf("Clone *.vdi and *.vmdk to VM folder: %v", err)
+			return diag.Errorf("failed to clone *.vdi and *.vmdk to VM folder: %v", err)
 		}
 	}
 
 	// Attach virtual disks to VM
 	vmDisks, err := gatherDisks(vm.BaseFolder)
 	if err != nil {
-		return errLogf("Unable to gather disks: %v", err)
+		return diag.Errorf("unable to gather disks: %v", err)
 	}
 
 	if err := vm.AddStorageCtl("SATA", vbox.StorageController{
@@ -273,7 +274,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 		HostIOCache: true,
 		Bootable:    true,
 	}); err != nil {
-		return errLogf("Create VirtualBox storage controller: %v", err)
+		return diag.Errorf("can't create VirtualBox storage controller: %v", err)
 	}
 
 	for i, disk := range vmDisks {
@@ -283,7 +284,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 			DriveType: vbox.DriveHDD,
 			Medium:    disk,
 		}); err != nil {
-			return errLogf("Attaching VirtualBox storage medium: %v", err)
+			return diag.Errorf("failed to attach VirtualBox storage medium: %v", err)
 		}
 	}
 
@@ -305,7 +306,7 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 
 		copyfile := exec.Command("cp", "-a", opticalDiskImage, target)
 		if err := copyfile.Run(); err != nil {
-			return errLogf("Cloning *.iso and *.dmg to VM folder: %v", err)
+			return diag.Errorf("failed to clone *.iso and *.dmg to VM folder: %v", err)
 		}
 
 		if err := vm.AttachStorage("SATA", vbox.StorageMedium{
@@ -314,33 +315,33 @@ func resourceVMCreate(d *schema.ResourceData, meta interface{}) error {
 			DriveType: vbox.DriveDVD,
 			Medium:    target,
 		}); err != nil {
-			return errLogf("Attaching VirtualBox storage medium: %v", err)
+			return diag.Errorf("unable to attach VirtualBox storage medium: %v", err)
 		}
 	}
 
 	// Setup VM general properties
 	if err := tfToVbox(d, vm); err != nil {
-		return errLogf("Converting Terraform data to VM properties: %v", err)
+		return diag.Errorf("unable to convert Terraform data to VM properties: %v", err)
 	}
 	if err := vm.Modify(); err != nil {
-		return errLogf("Setup VM properties: %v", err)
+		return diag.Errorf("can't set up VM properties: %v", err)
 	}
 
 	// Start the VM
 	if err := vm.Start(); err != nil {
-		return errLogf("Starting VM: %v", err)
+		return diag.Errorf("unable to start VM: %v", err)
 	}
 
 	// Assign VM ID
 	log.Printf("[DEBUG] Resource ID: %s\n", vm.UUID)
 	d.SetId(vm.UUID)
 
-	if err := waitUntilVMIsReady(d, vm, meta); err != nil {
-		return errLogf("Wait VM until ready: %v", err)
+	if err := waitUntilVMIsReady(ctx, d, vm, meta); err != nil {
+		return diag.Errorf("failed to wait until VM is ready: %v", err)
 	}
 
 	// Errors here are already logged.
-	return resourceVMRead(d, meta)
+	return resourceVMRead(ctx, d, meta)
 }
 
 func setState(d *schema.ResourceData, state vbox.MachineState) error {
@@ -358,12 +359,12 @@ func setState(d *schema.ResourceData, state vbox.MachineState) error {
 		err = d.Set("status", "aborted")
 	}
 	if err != nil {
-		return errLogf("Wait VM until ready: %v", err)
+		return errLogf("unable to update VM state: %v", err)
 	}
 	return nil
 }
 
-func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
+func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	vm, err := vbox.GetMachine(d.Id())
 	switch err {
 	case nil:
@@ -373,7 +374,7 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 		d.SetId("")
 		return nil
 	default:
-		return errLogf("unable to get machine: %v", err)
+		return diag.Errorf("unable to get machine: %v", err)
 	}
 
 	// if vm.State != vbox.Running {
@@ -383,36 +384,36 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 
 	err = setState(d, vm.State)
 	if err != nil {
-		return errLogf("can't set state: %v", err)
+		return diag.Errorf("can't set state: %v", err)
 	}
 	err = d.Set("name", vm.Name)
 	if err != nil {
-		return errLogf("can't set name: %v", err)
+		return diag.Errorf("can't set name: %v", err)
 	}
 	err = d.Set("cpus", vm.CPUs)
 	if err != nil {
-		return errLogf("can't set cpus: %v", err)
+		return diag.Errorf("can't set cpus: %v", err)
 	}
 	bytes := uint64(vm.Memory) * humanize.MiByte
 	repr := humanize.IBytes(bytes)
 	err = d.Set("memory", strings.ToLower(repr))
 	if err != nil {
-		return errLogf("can't set memory: %v", err)
+		return diag.Errorf("can't set memory: %v", err)
 	}
 
 	userData, err := vm.GetExtraData("user_data")
 	if err != nil {
-		return errLogf("can't get user data: %v", err)
+		return diag.Errorf("can't get user data: %v", err)
 	}
 	if userData != nil && *userData != "" {
 		err = d.Set("user_data", *userData)
 		if err != nil {
-			return errLogf("can't set user_data: %v", err)
+			return diag.Errorf("can't set user_data: %v", err)
 		}
 	}
 
 	if err = netVboxToTf(vm, d); err != nil {
-		return errLogf("can't convert vbox network to terraform data: %v", err)
+		return diag.Errorf("can't convert vbox network to terraform data: %v", err)
 	}
 
 	/* Set connection info to first non NAT IPv4 address */
@@ -438,46 +439,46 @@ func resourceVMRead(d *schema.ResourceData, meta interface{}) error {
 
 	err = d.Set("boot_order", vm.BootOrder)
 	if err != nil {
-		return errLogf("can't set boot_order: %v", err)
+		return diag.Errorf("can't set boot_order: %v", err)
 	}
 
 	return nil
 }
 
-func powerOnAndWait(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+func powerOnAndWait(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
 	if err := vm.Start(); err != nil {
 		return errors.Wrap(err, "can't start vm")
 	}
 
-	return errors.Wrap(waitUntilVMIsReady(d, vm, meta), "unable to power on and wait")
+	return errors.Wrap(waitUntilVMIsReady(ctx, d, vm, meta), "unable to power on and wait")
 }
 
-func resourceVMUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// TODO: allow partial updates
 
 	vm, err := vbox.GetMachine(d.Id())
 	if err != nil {
-		return errLogf("unable to get machine: %v", d.Id(), err)
+		return diag.Errorf("unable to get machine %s: %v", d.Id(), err)
 	}
 
 	if err := vm.Poweroff(); err != nil {
-		return errLogf("unable to poweroff machine: %v", d.Id(), err)
+		return diag.Errorf("unable to poweroff machine %s: %v", d.Id(), err)
 	}
 
 	// Modify VM
 	if err := tfToVbox(d, vm); err != nil {
-		return errLogf("can't convert terraform config to virtual machine: %v", err)
+		return diag.Errorf("can't convert terraform config to virtual machine: %v", err)
 	}
 	if err := vm.Modify(); err != nil {
-		return errLogf("unable to modify the vm: %v", err)
+		return diag.Errorf("unable to modify the vm: %v", err)
 	}
 
-	if err := powerOnAndWait(d, vm, meta); err != nil {
-		return errLogf("unable to power on and wait for VM: %v", err)
+	if err := powerOnAndWait(ctx, d, vm, meta); err != nil {
+		return diag.Errorf("unable to power on and wait for VM: %v", err)
 	}
 
 	// Errors are already logged
-	return resourceVMRead(d, meta)
+	return resourceVMRead(ctx, d, meta)
 }
 
 func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
@@ -492,7 +493,7 @@ func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 // Wait until VM is ready, and 'ready' means the first non NAT NIC get a ipv4_address assigned
-func waitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
 	for i, nic := range vm.NICs {
 		if nic.Network == vbox.NICNetNAT {
 			continue
@@ -500,7 +501,14 @@ func waitUntilVMIsReady(d *schema.ResourceData, vm *vbox.Machine, meta interface
 
 		key := fmt.Sprintf("network_adapter.%d.ipv4_address_available", i)
 		if _, err := waitForVMAttribute(
-			d, []string{"yes"}, []string{"no"}, key, meta, 30*time.Second, 1*time.Second,
+			ctx,
+			d,
+			[]string{"yes"},
+			[]string{"no"},
+			key,
+			meta,
+			30*time.Second,
+			1*time.Second,
 		); err != nil {
 			return errors.Wrapf(err, "waiting for VM (%s) to become ready", d.Get("name"))
 		}
@@ -787,27 +795,7 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 	return nil
 }
 
-//func WaitForVMAttribute(d *schema.ResourceData, target string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
-//	// Wait for the droplet so we can get the networking attributes
-//	// that show up after a while
-//	log.Printf(
-//		"[INFO] Waiting for VM (%s) to have %s of %s",
-//		d.Get("name"), attribute, target)
-//
-//	stateConf := &resource.StateChangeConf{
-//		Pending:        pending,
-//		Target:         []string{target},
-//		Refresh:        newVMStateRefreshFunc(d, attribute, meta),
-//		Timeout:        5 * time.Minute,
-//		Delay:          delay,
-//		MinTimeout:     interval,
-//		NotFoundChecks: 60,
-//	}
-//
-//	return stateConf.WaitForState()
-//}
-func waitForVMAttribute(
-	d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
+func waitForVMAttribute(ctx context.Context, d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
 	// Wait for the vm so we can get the networking attributes that show up
 	// after a while.
 	log.Printf(
@@ -817,22 +805,23 @@ func waitForVMAttribute(
 	stateConf := &resource.StateChangeConf{
 		Pending:        pending,
 		Target:         target,
-		Refresh:        newVMStateRefreshFunc(d, attribute, meta),
+		Refresh:        newVMStateRefreshFunc(ctx, d, attribute, meta),
 		Timeout:        5 * time.Minute,
 		Delay:          delay,
 		MinTimeout:     interval,
 		NotFoundChecks: 60,
 	}
 
-	return stateConf.WaitForState()
+	return stateConf.WaitForStateContext(ctx)
 }
 
-func newVMStateRefreshFunc(
-	d *schema.ResourceData, attribute string, meta interface{}) resource.StateRefreshFunc {
+func newVMStateRefreshFunc(ctx context.Context, d *schema.ResourceData, attribute string, meta interface{}) resource.StateRefreshFunc {
 	return func() (interface{}, string, error) {
-		err := resourceVMRead(d, meta)
+		err := resourceVMRead(ctx, d, meta)
 		if err != nil {
-			return nil, "", err
+			// TODO: How do we provide context easily without exploring the
+			//       diag.Diagnostics
+			return nil, "", errors.New("unable to read VM")
 		}
 
 		// See if we can access our attribute
