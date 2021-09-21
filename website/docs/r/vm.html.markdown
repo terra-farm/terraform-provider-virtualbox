@@ -54,7 +54,7 @@ The following arguments are supported:
     `bridged`, `hostonly`, `internal`, `generic`.
   - `.#.device`, string, optional, default="IntelPro1000MTServer": The model of
     the virtual hardware device, allowed values: `PCIII`, `FASTIII`,
-    `IntelPro1000MTDesktop` `IntelPro1000TServer`, `IntelPro1000MTServer`.
+    `IntelPro1000MTDesktop` `IntelPro1000TServer`, `IntelPro1000MTServer`, `VirtIO`.
   - `.#.host_interface`, string, optional: Some network type (hostonly,
     bridged, etc) must bind to a host interface to work properly, use this field
     to specify the name of the host interface you like to bind to (like 'en0',
