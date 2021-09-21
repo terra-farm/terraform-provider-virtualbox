@@ -1,6 +1,13 @@
 # Workflow used as Continous Integration every time we have a PR.
 name: CI
-on: [push, pull_request]
+
+on:
+  # Only build when pushed to master
+  push:
+    branches:
+    - master
+  # Build all pull requests
+  pull_request:
 
 jobs:
   lint:
