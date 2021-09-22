@@ -1,38 +1,33 @@
 # How to build from source
 
-1. git clone https://github.com/terra-farm/terraform-provider-virtualbox
-1. cd terraform-provider-virtualbox
-1. go build
-1. mv terraform-provider-virtualbox examples/
-1. cd examples/
-1. terraform init
-1. terraform plan
-1. terraform apply
+1. `git clone git@github.com:terra-farm/terraform-provider-virtualbox.git`
+1. `cd terraform-provider-virtualbox`
+1. `go build`
+1. `mv terraform-provider-virtualbox examples/`
+1. `cd examples/`
+1. `terraform init`
+1. `terraform plan`
+1. `terraform apply`
 
 # Adding documentation
 
-The website is built with [Antora](https://antora.org/) with content in [Asciidoc](http://asciidoc.org/) rather than Markdown because of its more extensive tag set.
+The website is hosted by the official [Terraform Registry](https://registry.terraform.io/providers/terra-farm/virtualbox/latest/docs).
+The source for the documentation is located in the `/website` directory. It follows the standard provider
+documentation format.
 
-All content lives under the [modules](modules) subfolder in this repository. In here, there are 2 subfolders:
+# Ask the community
 
-* `ROOT`: General documentation regarding this provider
-* `reference`: documentation for all resources and data sources.
-
-You do not have to do anything special if you change existing documentation. If you want to create new pages
-for the site, create a new file with extension `.adoc` and add a cross-reference to the file `nav.adoc`.
-`nav.adoc` represents the table of contents. Position the newly created file at the correct place in the 
-table of contents.
-
-*NOTE:* When documentation changes are integrated on the `master` branch, these will not become visible on the
-website. A rebuilt of the [master site](https://github.com/terra-farm/terra-farm.github.io) is needed to pull 
-the documentation changes for each provider.
+If you have a change which you think will benefit the project, ask. This can be either done as a new issue, or by creating a PR with the changes included.
 
 # Creating a release
 
-To create and publish a new release on Github, a committer only needs to check one item:
+To create a new release for the Terraform Registry, a maintainer only needs to create a new release
+in the [Github UI](https://github.com/terra-farm/terraform-provider-virtualbox/releases/new).
 
-* Verify that the commit for the release builds succesfully on [Travis CI](https://travis-ci.org/terra-farm/terraform-provider-virtualbox).
+This will automatically publish the release to the Terraform Registry assuming the `release` Github
+Action passes.
 
-If the commit builds correctly, then tag this commit as version `vX.Y.Z`. Make sure the version number
-starts with the lowercase `v`. Push the tag to the Github remote and Travis will build again but also
-publish the binaries as a release on Github.
+## Updating signing certificate
+
+Please follow the [GPG Signing Key](https://learn.hashicorp.com/tutorials/terraform/provider-release-publish?in=terraform/providers#generate-gpg-signing-key)
+guide in the official Terraform Documentation. We try to follow the recommended guides as closely as possible.
