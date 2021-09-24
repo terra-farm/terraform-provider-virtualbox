@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.7.1
 	github.com/pkg/errors v0.9.1
 	github.com/smartystreets/goconvey v1.6.4
-	github.com/terra-farm/go-virtualbox v0.0.5-0.20210628144304-5f2cd9661101
+	github.com/terra-farm/go-virtualbox v0.0.5-0.20210923155707-1e17d843762c
 )
 
 require (
