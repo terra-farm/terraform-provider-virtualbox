@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,7 +26,6 @@ import (
 )
 
 var (
-	vbm              string // Path to VBoxManage utility.
 	defaultBootOrder = []string{"disk", "none", "none", "none"}
 )
 
@@ -244,12 +242,8 @@ func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta interfac
 		filename := filepath.Base(src)
 
 		target := filepath.Join(vm.BaseFolder, filename)
-		vbm = "VBoxManage"
-		if p := os.Getenv("VBOX_INSTALL_PATH"); p != "" && runtime.GOOS == "windows" {
-			vbm = filepath.Join(p, "VBoxManage.exe")
-		}
-		setUUIDCmd := exec.Command(vbm, "internalcommands", "sethduuid", src)
-		if err := setUUIDCmd.Run(); err != nil {
+
+		if _, _, err := vbox.Run(ctx, "internalcommands", "sethduuid", src); err != nil {
 			return diag.Errorf("unable to set UUID: %v", err)
 		}
 
