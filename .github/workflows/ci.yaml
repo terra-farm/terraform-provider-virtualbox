@@ -2,10 +2,10 @@
 name: CI
 
 on:
-  # Only build when pushed to master
+  # Only build when pushed to main
   push:
     branches:
-    - master
+    - main
   # Build all pull requests
   pull_request:
 
