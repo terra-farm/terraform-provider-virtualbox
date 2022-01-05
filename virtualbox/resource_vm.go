@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -298,9 +297,34 @@ func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta interfac
 
 		target := filepath.Join(vm.BaseFolder, fileName)
 
-		copyfile := exec.Command("cp", "-a", opticalDiskImage, target)
-		if err := copyfile.Run(); err != nil {
-			return diag.Errorf("failed to clone *.iso and *.dmg to VM folder: %v", err)
+		sourceFile, err := os.Open(opticalDiskImage)
+		if err != nil {
+			return diag.Errorf("failed to open source optical disk image: %v", err)
+		}
+
+		// make sure the file is closed when this function ends
+		defer sourceFile.Close()
+
+		targetFile, err := os.Create(target)
+		if err != nil {
+			return diag.Errorf("failed to create target optical disk image: %v", err)
+		}
+
+		// make sure the file is closed when this function ends
+		defer targetFile.Close()
+
+		if _, err := io.Copy(targetFile, sourceFile); err != nil {
+			return diag.Errorf("copy optical disk image failed: %v", err)
+		}
+
+		// Explicitly sync & close the file now, so virtualbox can read it immediately, if we do not
+		// do this, attaching the iso will fail.
+		if err := targetFile.Sync(); err != nil {
+			return diag.Errorf("sync target optical disk image to filesystem: %v", err)
+		}
+
+		if err := targetFile.Close(); err != nil {
+			return diag.Errorf("close target optical disk image: %v", err)
 		}
 
 		if err := vm.AttachStorage("SATA", vbox.StorageMedium{
@@ -372,8 +396,8 @@ func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta interface{
 	}
 
 	// if vm.State != vbox.Running {
-	// 	setState(d, vm.State)
-	// 	return nil
+	//	setState(d, vm.State)
+	//	return nil
 	// }
 
 	err = setState(d, vm.State)
@@ -841,7 +865,7 @@ func fetchIfRemote(u *url.URL) (string, error) {
 	}
 
 	// TODO: Add special handing for other schemes, such as
-	// 		 s3, gcs, (s)ftp(s).
+	//		 s3, gcs, (s)ftp(s).
 	// We want to quit if the scheme is not currently supported.
 	switch u.Scheme {
 	case "http", "https":
