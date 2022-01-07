@@ -16,6 +16,7 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/hashicorp/go-cty/cty"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -78,6 +79,26 @@ func resourceVM() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "512mib",
+			},
+
+			"firmware": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Firmware of the vm, can either be BIOS or EFI",
+				Default:     "BIOS",
+				StateFunc: func(val interface{}) string {
+					return strings.ToUpper(val.(string))
+				},
+				ValidateDiagFunc: func(val interface{}, _ cty.Path) diag.Diagnostics {
+					switch v := val.(string); strings.ToUpper(v) {
+					case "EFI":
+						return nil
+					case "BIOS":
+						return nil
+					default:
+						return diag.Errorf("%s is not a valid firmware, valid options are BIOS or EFI", v)
+					}
+				},
 			},
 
 			"status": {
@@ -419,6 +440,10 @@ func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta interface{
 		return diag.Errorf("can't set memory: %v", err)
 	}
 
+	if err = d.Set("firmware", vm.Firmware); err != nil {
+		return diag.Errorf("can't set firmware: %v", err)
+	}
+
 	userData, err := vm.GetExtraData("user_data")
 	if err != nil {
 		return diag.Errorf("can't get user data: %v", err)
@@ -545,6 +570,8 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 		return errors.Wrap(err, "cannot humanize bytes")
 	}
 	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
+
+	vm.Firmware = d.Get("firmware").(string)
 
 	vm.VRAM = 20 // Always 10MiB for vram
 	vm.Flag = vbox.ACPI | vbox.IOAPIC | vbox.RTCUSEUTC | vbox.PAE |

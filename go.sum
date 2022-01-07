@@ -309,8 +309,12 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/terra-farm/go-virtualbox v0.0.4 h1:UAEVNAYLA3g80Z//fMZFVSWHEPqRWkWP2gmFh2p/guQ=
+github.com/terra-farm/go-virtualbox v0.0.4/go.mod h1:5n2X+HKR2eAzHfuGFnrZlCrgiYrseNHIcNTSpA/ViyU=
 github.com/terra-farm/go-virtualbox v0.0.5-0.20210923155707-1e17d843762c h1:GUD6EcJwuE6ZOVSLa+Fh4/BMcB8NeC7zuJLRXHozviM=
 github.com/terra-farm/go-virtualbox v0.0.5-0.20210923155707-1e17d843762c/go.mod h1:AzCBcgfONAK4nUCMhG09XLc3oasGNLqg10QbVP68Yxo=
+github.com/terra-farm/go-virtualbox v0.0.5-0.20220105144057-c7149ec50e96 h1:WhWIIBdQRluSMLMJvQn5Oe4Vkj6TjR2rktjDjhPMl50=
+github.com/terra-farm/go-virtualbox v0.0.5-0.20220105144057-c7149ec50e96/go.mod h1:AzCBcgfONAK4nUCMhG09XLc3oasGNLqg10QbVP68Yxo=
 github.com/ulikunitz/xz v0.5.8 h1:ERv8V6GKqVi23rgu5cj9pVfVzJbOqAY2Ntl88O6c2nQ=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
