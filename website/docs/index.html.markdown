@@ -21,7 +21,7 @@ terraform {
   required_providers {
     virtualbox = {
       source = "shekeriev/virtualbox"
-      version = "0.0.3"
+      version = "0.0.4"
     }
   }
 }
@@ -34,7 +34,7 @@ provider "virtualbox" {
 resource "virtualbox_vm" "vm1" {
   name   = "debian-11"
   image  = "https://app.vagrantup.com/shekeriev/boxes/debian-11/versions/0.2/providers/virtualbox.box"
-  cpus   = 1
+  cpus      = 1
   memory    = "512 mib"
   user_data = file("${path.module}/user_data")
 
