@@ -16,4 +16,5 @@ dist/
 .python-version
 /examples/.python-version
 coverage.txt
-
+output/
+build.sh
