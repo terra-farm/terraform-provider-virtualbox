@@ -8,10 +8,10 @@ description: |-
 
 # Virtualbox Provider
 
-The Virtualbox provider for Terraform allows to manage local virtualbox machines
+The Virtualbox provider for Terraform allows managing local VirtualBox machines
 using Terraform. The main purpose of this provider is to make you familiar with
 Terraform and provisioning machines, without leaving your machine, therefore
-saving you costs. However remember that your local environment might differ
+saving you costs. However, remember that your local environment might differ
 from a cloud provider.
 
 ## Example Usage
