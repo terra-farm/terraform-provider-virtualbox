@@ -20,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/pkg/errors"
 	vbox "github.com/terra-farm/go-virtualbox"
 )
 
@@ -160,7 +159,7 @@ func resourceVM() *schema.Resource {
 	}
 }
 
-func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+func resourceVMExists(d *schema.ResourceData, meta any) (bool, error) {
 	name := d.Get("name").(string)
 
 	switch _, err := vbox.GetMachine(name); err {
@@ -175,7 +174,7 @@ func resourceVMExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 
 var imageOpMutex sync.Mutex
 
-func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	image := d.Get("image").(string)
 
 	if addr, exists := d.GetOk("url"); exists {
@@ -382,7 +381,7 @@ func setState(d *schema.ResourceData, state vbox.MachineState) error {
 	return nil
 }
 
-func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	vm, err := vbox.GetMachine(d.Id())
 	switch err {
 	case nil:
@@ -463,15 +462,19 @@ func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta interface{
 	return nil
 }
 
-func powerOnAndWait(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+func powerOnAndWait(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta any) error {
 	if err := vm.Start(); err != nil {
-		return errors.Wrap(err, "can't start vm")
+		return fmt.Errorf("can't start vm: %w", err)
 	}
 
-	return errors.Wrap(waitUntilVMIsReady(ctx, d, vm, meta), "unable to power on and wait")
+	if err := waitUntilVMIsReady(ctx, d, vm, meta); err != nil {
+		return fmt.Errorf("unabke to poer on and wait: %w", err)
+	}
+
+	return nil
 }
 
-func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	// TODO: allow partial updates
 
 	vm, err := vbox.GetMachine(d.Id())
@@ -499,7 +502,7 @@ func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta interfac
 	return resourceVMRead(ctx, d, meta)
 }
 
-func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceVMDelete(d *schema.ResourceData, meta any) error {
 	vm, err := vbox.GetMachine(d.Id())
 	if err != nil {
 		return errLogf("unable to get machine: %v", err)
@@ -511,7 +514,7 @@ func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 // Wait until VM is ready, and 'ready' means the first non NAT NIC get a ipv4_address assigned
-func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
+func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta any) error {
 	for i, nic := range vm.NICs {
 		if nic.Network == vbox.NICNetNAT {
 			continue
@@ -528,7 +531,7 @@ func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Ma
 			30*time.Second,
 			1*time.Second,
 		); err != nil {
-			return errors.Wrapf(err, "waiting for VM (%s) to become ready", d.Get("name"))
+			return fmt.Errorf("waiting for VM (%s) to become ready: %w", d.Get("name"), err)
 		}
 		break
 	}
@@ -542,7 +545,7 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	vm.CPUs = uint(d.Get("cpus").(int))
 	bytes, err := humanize.ParseBytes(d.Get("memory").(string))
 	if err != nil {
-		return errors.Wrap(err, "cannot humanize bytes")
+		return fmt.Errorf("cannot humanize bytes: %w", err)
 	}
 	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
 
@@ -556,7 +559,7 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 		err = vm.SetExtraData("user_data", userData)
 	}
 	vm.BootOrder = defaultBootOrder
-	for i, bootDev := range d.Get("boot_order").([]interface{}) {
+	for i, bootDev := range d.Get("boot_order").([]any) {
 		vm.BootOrder[i] = bootDev.(string)
 	}
 	return err
@@ -754,10 +757,10 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 		}
 
 		// Assign NIC property to vbox structure and Terraform
-		nics := make([]map[string]interface{}, 0, 1)
+		nics := make([]map[string]any, 0, 1)
 
 		for _, nic := range vm.NICs {
-			out := make(map[string]interface{})
+			out := make(map[string]any)
 
 			out["type"] = vboxToTfNetworkType(nic.Network)
 			out["device"] = vboxToTfVdevice(nic.Hardware)
@@ -786,10 +789,10 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 	} else {
 		// Assign NIC property to vbox structure and Terraform
-		nics := make([]map[string]interface{}, 0, 1)
+		nics := make([]map[string]any, 0, 1)
 
 		for _, nic := range vm.NICs {
-			out := make(map[string]interface{})
+			out := make(map[string]any)
 
 			out["type"] = vboxToTfNetworkType(nic.Network)
 			out["device"] = vboxToTfVdevice(nic.Hardware)
@@ -813,7 +816,7 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 	return nil
 }
 
-func waitForVMAttribute(ctx context.Context, d *schema.ResourceData, target []string, pending []string, attribute string, meta interface{}, delay, interval time.Duration) (interface{}, error) {
+func waitForVMAttribute(ctx context.Context, d *schema.ResourceData, target []string, pending []string, attribute string, meta any, delay, interval time.Duration) (any, error) {
 	// Wait for the vm so we can get the networking attributes that show up
 	// after a while.
 	log.Printf(
@@ -833,13 +836,13 @@ func waitForVMAttribute(ctx context.Context, d *schema.ResourceData, target []st
 	return stateConf.WaitForStateContext(ctx)
 }
 
-func newVMStateRefreshFunc(ctx context.Context, d *schema.ResourceData, attribute string, meta interface{}) resource.StateRefreshFunc {
-	return func() (interface{}, string, error) {
+func newVMStateRefreshFunc(ctx context.Context, d *schema.ResourceData, attribute string, meta any) resource.StateRefreshFunc {
+	return func() (any, string, error) {
 		err := resourceVMRead(ctx, d, meta)
 		if err != nil {
 			// TODO: How do we provide context easily without exploring the
 			//       diag.Diagnostics
-			return nil, "", errors.New("unable to read VM")
+			return nil, "", fmt.Errorf("unable to read VM")
 		}
 
 		// See if we can access our attribute
@@ -847,7 +850,7 @@ func newVMStateRefreshFunc(ctx context.Context, d *schema.ResourceData, attribut
 			// Retrieve the VM properties
 			vm, err := vbox.GetMachine(d.Id())
 			if err != nil {
-				return nil, "", errors.Wrap(err, "unable to retrive vm")
+				return nil, "", fmt.Errorf("unable to retrive vm: %w", err)
 			}
 
 			return &vm, attr.(string), nil

@@ -4,9 +4,7 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"github.com/terra-farm/terraform-provider-virtualbox/virtualbox"
@@ -16,20 +14,8 @@ func main() {
 	debug := flag.Bool("debug", false, "run the provider in debug mode")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{
+	plugin.Serve(&plugin.ServeOpts{
 		ProviderFunc: virtualbox.Provider,
-	}
-
-	if *debug {
-		if err := plugin.Debug(
-			context.Background(),
-			"registry.terraform.io/terra-farm/virtualbox",
-			opts,
-		); err != nil {
-			log.Fatalf("unable to run provider: %v", err)
-		}
-		return
-	}
-
-	plugin.Serve(opts)
+		Debug:        *debug,
+	})
 }
