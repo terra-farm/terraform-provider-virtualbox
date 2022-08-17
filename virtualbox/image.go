@@ -8,15 +8,12 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // InvalidChecksumTypeError is returned when the passed checksum algorithm
@@ -42,7 +39,7 @@ type image struct {
 func unpackImage(image, toDir string) error {
 	/* Check if toDir exists */
 	_, err := os.Stat(toDir)
-	finfo, _ := ioutil.ReadDir(toDir)
+	finfo, _ := os.ReadDir(toDir)
 	dirEmpty := len(finfo) == 0
 	if os.IsNotExist(err) || dirEmpty {
 		err := os.MkdirAll(toDir, 0740)
@@ -71,11 +68,11 @@ func unpackImage(image, toDir string) error {
 func gatherDisks(path string) ([]string, error) {
 	VDIs, err := filepath.Glob(filepath.Join(path, "**.vdi"))
 	if err != nil {
-		return nil, errors.Wrapf(err, "get *.vdi in '%s", path)
+		return nil, fmt.Errorf("get *.vdi in %q: %w", path, err)
 	}
 	VMDKs, err := filepath.Glob(filepath.Join(path, "**.vmdk"))
 	if err != nil {
-		return nil, errors.Wrapf(err, "get *.vmdk in path '%s'", path)
+		return nil, fmt.Errorf("get *.vmdk in path %q: %w", path, err)
 	}
 	disks := append(VDIs, VMDKs...)
 	if len(disks) == 0 {
@@ -116,11 +113,11 @@ func (img *image) verify() error {
 
 	// Makes sure the file cursor is positioned at the beginning of the file
 	if _, err := img.file.Seek(0, 0); err != nil {
-		return errors.Wrap(err, "can't seek image file")
+		return fmt.Errorf("can't seek image file: %w", err)
 	}
 
 	if _, err := io.Copy(hasher, img.file); err != nil {
-		return errors.Wrap(err, "cannot hash image file")
+		return fmt.Errorf("cannot hash image file: %w", err)
 	}
 
 	result := fmt.Sprintf("%x", hasher.Sum(nil))
