@@ -24,7 +24,8 @@ func init() {
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
-			"virtualbox_vm": resourceVM(),
+			"virtualbox_vm":         resourceVM(),
+			"virtualbox_natnetwork": resourceNatNetwork(),
 		},
 	}
 }
