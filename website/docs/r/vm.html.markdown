@@ -18,7 +18,6 @@ resource "virtualbox_vm" "node" {
   image     = "https://app.vagrantup.com/ubuntu/boxes/bionic64/versions/20180903.0.0/providers/virtualbox.box"
   cpus      = 2
   memory    = "512 mib"
-  user_data = file("${path.module}/user_data")
 
   network_adapter {
     type           = "hostonly"
@@ -40,7 +39,6 @@ The following arguments are supported:
 - `cpus`, int, optional, default=2: The number of CPUs.
 - `memory`, string, optional, default="512mib": The size of memory, allow human
   friendly units like 'MB', 'MiB'.
-- `user_data`, string, optional, default="": User defined data.
 - `status`, string, optional, default="running": The status of the VM. This
   value will be updated at runtime to reflect the real status of the VM,
   and you can also specify it explicitly in config to manually control the
