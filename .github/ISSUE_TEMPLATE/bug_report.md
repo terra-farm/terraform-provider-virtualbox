@@ -19,6 +19,10 @@ Before you submit a new bug, make sure to read through existing open bugs. If yo
 
 `eg. v0.2.2-alpha.2`
 
+## Virtualbox Version
+
+`eg. 6.1.38`
+
 ## Operating System
 
 `eg. Linux`
