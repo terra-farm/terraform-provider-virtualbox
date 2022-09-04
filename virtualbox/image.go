@@ -1,6 +1,7 @@
 package virtualbox
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -8,12 +9,13 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // InvalidChecksumTypeError is returned when the passed checksum algorithm
@@ -36,7 +38,7 @@ type image struct {
 	file io.ReadSeeker
 }
 
-func unpackImage(image, toDir string) error {
+func unpackImage(ctx context.Context, image, toDir string) error {
 	/* Check if toDir exists */
 	_, err := os.Stat(toDir)
 	finfo, _ := os.ReadDir(toDir)
@@ -53,7 +55,10 @@ func unpackImage(image, toDir string) error {
 		defer fp.Close()
 
 		/* Unpack */
-		// log.Printf("[DEBUG] Unpacking Gold virtual machine into %s\n", toDir)
+		tflog.Debug(ctx, "unpacking gold virtual image", map[string]any{
+			"image": image,
+			"toDir": toDir,
+		})
 		cmd := exec.Command("tar", "-xv", "-C", toDir, "-f", image)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -94,8 +99,8 @@ func (ss ByDiskPriority) Less(i, j int) bool {
 	return !strings.Contains(ss[i], "configdrive")
 }
 
-func (img *image) verify() error {
-	log.Printf("[DEBUG] Verifying image checksum...")
+func (img *image) verify(ctx context.Context) error {
+	tflog.Debug(ctx, "verifying image checksum")
 	var hasher hash.Hash
 
 	switch img.ChecksumType {

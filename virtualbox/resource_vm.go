@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +16,7 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -168,7 +168,7 @@ func resourceVMExists(d *schema.ResourceData, meta any) (bool, error) {
 	case vbox.ErrMachineNotExist:
 		return false, nil
 	default:
-		return false, errLogf("Checking existance of VM '%s': %v", name, err)
+		return false, fmt.Errorf("error when checking for existance of the VM: %w", err)
 	}
 }
 
@@ -216,7 +216,7 @@ func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta any) dia
 	}
 
 	goldPath := filepath.Join(goldFolder, goldName)
-	if err = unpackImage(imagePath, goldPath); err != nil {
+	if err = unpackImage(ctx, imagePath, goldPath); err != nil {
 		imageOpMutex.Unlock()
 		return diag.Errorf("failed to unpack image %s: %v", image, err)
 	}
@@ -337,7 +337,7 @@ func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta any) dia
 	}
 
 	// Setup VM general properties
-	if err := tfToVbox(d, vm); err != nil {
+	if err := tfToVbox(ctx, d, vm); err != nil {
 		return diag.Errorf("unable to convert Terraform data to VM properties: %v", err)
 	}
 	if err := vm.Modify(); err != nil {
@@ -350,7 +350,9 @@ func resourceVMCreate(ctx context.Context, d *schema.ResourceData, meta any) dia
 	}
 
 	// Assign VM ID
-	log.Printf("[DEBUG] Resource ID: %s\n", vm.UUID)
+	tflog.Debug(ctx, "resource ID", map[string]any{
+		"uuid": vm.UUID,
+	})
 	d.SetId(vm.UUID)
 
 	if err := waitUntilVMIsReady(ctx, d, vm, meta); err != nil {
@@ -376,7 +378,7 @@ func setState(d *schema.ResourceData, state vbox.MachineState) error {
 		err = d.Set("status", "aborted")
 	}
 	if err != nil {
-		return errLogf("unable to update VM state: %v", err)
+		return fmt.Errorf("unable to update VM state: %w", err)
 	}
 	return nil
 }
@@ -487,7 +489,7 @@ func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta any) dia
 	}
 
 	// Modify VM
-	if err := tfToVbox(d, vm); err != nil {
+	if err := tfToVbox(ctx, d, vm); err != nil {
 		return diag.Errorf("can't convert terraform config to virtual machine: %v", err)
 	}
 	if err := vm.Modify(); err != nil {
@@ -505,10 +507,10 @@ func resourceVMUpdate(ctx context.Context, d *schema.ResourceData, meta any) dia
 func resourceVMDelete(d *schema.ResourceData, meta any) error {
 	vm, err := vbox.GetMachine(d.Id())
 	if err != nil {
-		return errLogf("unable to get machine: %v", err)
+		return fmt.Errorf("unable to get machine for deletion: %w", err)
 	}
 	if err := vm.Delete(); err != nil {
-		return errLogf("unable to remove the VM: %v", err)
+		return fmt.Errorf("unabke to remove the VM: %w", err)
 	}
 	return nil
 }
@@ -538,7 +540,7 @@ func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Ma
 	return nil
 }
 
-func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
+func tfToVbox(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine) error {
 	var err error
 
 	vm.OSType = "Linux_64"
@@ -553,7 +555,7 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	vm.Flag = vbox.ACPI | vbox.IOAPIC | vbox.RTCUSEUTC | vbox.PAE |
 		vbox.HWVIRTEX | vbox.NESTEDPAGING | vbox.LARGEPAGES | vbox.LONGMODE |
 		vbox.VTXVPID | vbox.VTXUX
-	vm.NICs, err = netTfToVbox(d)
+	vm.NICs, err = netTfToVbox(ctx, d)
 	userData := d.Get("user_data").(string)
 	if userData != "" {
 		err = vm.SetExtraData("user_data", userData)
@@ -565,7 +567,7 @@ func tfToVbox(d *schema.ResourceData, vm *vbox.Machine) error {
 	return err
 }
 
-func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
+func netTfToVbox(ctx context.Context, d *schema.ResourceData) ([]vbox.NIC, error) {
 	tfToVboxNetworkType := func(attr string) (vbox.NICNetwork, error) {
 		switch attr {
 		case "bridged":
@@ -631,7 +633,9 @@ func netTfToVbox(d *schema.ResourceData) ([]vbox.NIC, error) {
 			continue
 		}
 
-		log.Printf("[DEBUG] Network adapter: %+v\n", adapter)
+		tflog.Debug(ctx, "adding new converted network adapter", map[string]any{
+			"adapter": fmt.Sprintf("%+v", adapter),
+		})
 		adapters = append(adapters, adapter)
 	}
 
@@ -784,7 +788,7 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 
 		err = d.Set("network_adapter", nics)
 		if err != nil {
-			return errLogf("can't set network_adapter: %v", err)
+			return fmt.Errorf("can't set network_adapter: %w", err)
 		}
 
 	} else {
@@ -806,9 +810,8 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 			nics = append(nics, out)
 		}
 
-		err := d.Set("network_adapter", nics)
-		if err != nil {
-			return errLogf("can't set network_adapter: %v", err)
+		if err := d.Set("network_adapter", nics); err != nil {
+			return fmt.Errorf("can't set network_adapter: %w", err)
 		}
 
 	}
@@ -819,9 +822,11 @@ func netVboxToTf(vm *vbox.Machine, d *schema.ResourceData) error {
 func waitForVMAttribute(ctx context.Context, d *schema.ResourceData, target []string, pending []string, attribute string, meta any, delay, interval time.Duration) (any, error) {
 	// Wait for the vm so we can get the networking attributes that show up
 	// after a while.
-	log.Printf(
-		"[INFO] Waiting for VM (%s) to have %s of %s",
-		d.Get("name"), attribute, target)
+	tflog.Debug(ctx, "waiting for vm to have required attribute value", map[string]any{
+		"vm":        d.Get("name"),
+		"attribute": attribute,
+		"target":    "target",
+	})
 
 	stateConf := &resource.StateChangeConf{
 		Pending:        pending,

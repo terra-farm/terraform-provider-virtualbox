@@ -1,6 +1,7 @@
 package virtualbox
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -15,7 +16,7 @@ func TestUnpackImage_gzip(t *testing.T) {
 	Convey("Unpack image to a temporary directory", t, func() {
 		dir, err := os.MkdirTemp("", "tfvbox-test-")
 		So(err, ShouldBeNil)
-		err = unpackImage("testdata/hello.tar.gz", dir)
+		err = unpackImage(context.Background(), "testdata/hello.tar.gz", dir)
 		So(err, ShouldBeNil)
 
 		Convey("The unpacked file should be there", func() {
@@ -36,7 +37,7 @@ func TestUnpackImage_bzip2(t *testing.T) {
 	Convey("Unpack image to a temporary directory", t, func() {
 		dir, err := os.MkdirTemp("", "tfvbox-test-")
 		So(err, ShouldBeNil)
-		err = unpackImage("testdata/hello.tar.bz2", dir)
+		err = unpackImage(context.Background(), "testdata/hello.tar.bz2", dir)
 		So(err, ShouldBeNil)
 
 		Convey("The unpacked file should be there", func() {
@@ -57,7 +58,7 @@ func TestUnpackImage_xz(t *testing.T) {
 	Convey("Unpack image to a temporary directory", t, func() {
 		dir, err := os.MkdirTemp("", "tfvbox-test-")
 		So(err, ShouldBeNil)
-		err = unpackImage("testdata/hello.tar.xz", dir)
+		err = unpackImage(context.Background(), "testdata/hello.tar.xz", dir)
 		So(err, ShouldBeNil)
 
 		Convey("The unpacked file should be there", func() {
@@ -91,7 +92,7 @@ func TestVerify(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			if err := tc.img.verify(); !errors.Is(err, tc.err) {
+			if err := tc.img.verify(context.Background()); !errors.Is(err, tc.err) {
 				t.Errorf("verify() = %v, want %v", err, tc.err)
 			}
 		})
