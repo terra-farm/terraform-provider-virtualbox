@@ -24,6 +24,7 @@ Before you submit a new bug, make sure to read through existing open bugs. If yo
 `eg. Linux`
 
 ## Describe the bug
+
 A clear and concise description of what the bug is.
 
 ## To Reproduce
@@ -34,12 +35,13 @@ Steps to reproduce the behavior:
 3. Step 3
 
 ## Expected Behaviour
+
 A clear and concise description of what you expected to happen.
 
 ## Configuration
 
 ```tf
-resource ”virtualbox_vm” ”vm” {
+resource "virtualbox_vm" "vm" {
   // …
 }
 ```
