@@ -23,7 +23,7 @@ Before you submit a new bug, make sure to read through existing open bugs. If yo
 
 `eg. Linux`
 
-## Describe the bug
+## Describe the bug
 
 A clear and concise description of what the bug is.
 
@@ -34,7 +34,7 @@ Steps to reproduce the behavior:
 2. Step 2
 3. Step 3
 
-## Expected Behaviour
+## Expected Behaviour
 
 A clear and concise description of what you expected to happen.
 
