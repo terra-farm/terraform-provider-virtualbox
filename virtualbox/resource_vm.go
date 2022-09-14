@@ -86,9 +86,10 @@ func resourceVM() *schema.Resource {
 			},
 
 			"user_data": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Deprecated: "user_data is not working and is temporarily deprecated while we figure out how to make it work",
+				Type:       schema.TypeString,
+				Optional:   true,
+				Default:    "",
 			},
 
 			"checksum": {
@@ -420,17 +421,6 @@ func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		return diag.Errorf("can't set memory: %v", err)
 	}
 
-	userData, err := vm.GetExtraData("user_data")
-	if err != nil {
-		return diag.Errorf("can't get user data: %v", err)
-	}
-	if userData != nil && *userData != "" {
-		err = d.Set("user_data", *userData)
-		if err != nil {
-			return diag.Errorf("can't set user_data: %v", err)
-		}
-	}
-
 	if err = netVboxToTf(vm, d); err != nil {
 		return diag.Errorf("can't convert vbox network to terraform data: %v", err)
 	}
@@ -556,10 +546,6 @@ func tfToVbox(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine) err
 		vbox.HWVIRTEX | vbox.NESTEDPAGING | vbox.LARGEPAGES | vbox.LONGMODE |
 		vbox.VTXVPID | vbox.VTXUX
 	vm.NICs, err = netTfToVbox(ctx, d)
-	userData := d.Get("user_data").(string)
-	if userData != "" {
-		err = vm.SetExtraData("user_data", userData)
-	}
 	vm.BootOrder = defaultBootOrder
 	for i, bootDev := range d.Get("boot_order").([]any) {
 		vm.BootOrder[i] = bootDev.(string)
