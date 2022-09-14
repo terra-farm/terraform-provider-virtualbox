@@ -4,14 +4,17 @@
 
 // Package virtualbox serves as an entrypoint, returning the list of available
 // resources for the plugin.
-package virtualbox
+package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/terra-farm/go-virtualbox"
 )
 
 func init() {
@@ -20,11 +23,18 @@ func init() {
 	log.SetPrefix(fmt.Sprintf("pid-%d-", os.Getpid()))
 }
 
-// Provider returns a resource provider for virtualbox.
-func Provider() *schema.Provider {
+// New returns a resource provider for virtualbox.
+func New() *schema.Provider {
 	return &schema.Provider{
 		ResourcesMap: map[string]*schema.Resource{
 			"virtualbox_vm": resourceVM(),
 		},
+		ConfigureContextFunc: configure,
 	}
+}
+
+// configure creates a new instance of the new virtualbox manager which will be
+// used for communication with virtualbox.
+func configure(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
+	return virtualbox.NewManager(), nil
 }

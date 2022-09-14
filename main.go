@@ -7,7 +7,7 @@ import (
 	"flag"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/terra-farm/terraform-provider-virtualbox/virtualbox"
+	"github.com/terra-farm/terraform-provider-virtualbox/internal/provider"
 )
 
 func main() {
@@ -15,7 +15,8 @@ func main() {
 	flag.Parse()
 
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: virtualbox.Provider,
+		ProviderFunc: provider.New,
+		ProviderAddr: "registry.terraform.io/terra-farm/virtualbox",
 		Debug:        *debug,
 	})
 }
