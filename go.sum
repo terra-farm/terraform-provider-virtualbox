@@ -213,6 +213,8 @@ github.com/terra-farm/go-virtualbox v0.0.5-0.20220817001340-1829d466472a h1:ol4x
 github.com/terra-farm/go-virtualbox v0.0.5-0.20220817001340-1829d466472a/go.mod h1:zzjz3gJPkYrCEpNqr3m4oc/ml00W1ug5Mar136txVNo=
 github.com/terra-farm/go-virtualbox v0.0.5-0.20220914231059-a8807d6fefff h1:tW5X20uR8OPGmAGwTcsVJXcIBLgPtRMHXpttDNnjtjQ=
 github.com/terra-farm/go-virtualbox v0.0.5-0.20220914231059-a8807d6fefff/go.mod h1:zzjz3gJPkYrCEpNqr3m4oc/ml00W1ug5Mar136txVNo=
+github.com/terra-farm/go-virtualbox v0.0.5-0.20221025232227-5b7d1140508e h1:54UUtvaWsdh7iG5mGeYFEu6UqbsqGpfQ6+4iTuMOxcY=
+github.com/terra-farm/go-virtualbox v0.0.5-0.20221025232227-5b7d1140508e/go.mod h1:zzjz3gJPkYrCEpNqr3m4oc/ml00W1ug5Mar136txVNo=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
 github.com/vmihailenco/msgpack v4.0.4+incompatible h1:dSLoQfGFAo3F6OoNhwUmLwVgaUXK79GlxNBwueZn0xI=
 github.com/vmihailenco/msgpack v4.0.4+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
