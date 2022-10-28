@@ -9,6 +9,25 @@
 1. `terraform plan`
 1. `terraform apply`
 
+# Debugging
+
+If terraform still uses the preinstalled version you can try to move the binary to the explicit plugins folder, as mentioned in the [official terraform documentation](https://developer.hashicorp.com/terraform/plugin/debugging) or in a [terraform tutorial](https://developer.hashicorp.com/terraform/tutorials/providers/provider-debug):
+```bash
+mv terraform-provider-virtualbox ~/.terraform.d/plugins/registry.local/local/virtualbox/5.0.0/linux_amd64/terraform-provider-virtualbox_v5.0.0
+```
+You'll have to change the provider in your terraform configuration too:
+```terraform
+terraform {
+  required_providers {
+    virtualbox = {
+      source = "registry.local/local/virtualbox",
+      version = "5.0.0"
+    }
+  }
+}
+```
+Setting the `TF_LOG` environment variable to `DEBUG` can also help investigating erros, you can read the [official terraform documentation](https://developer.hashicorp.com/terraform/internals/debugging) for more details.
+
 # Adding documentation
 
 The website is hosted by the official [Terraform Registry](https://registry.terraform.io/providers/terra-farm/virtualbox/latest/docs).
