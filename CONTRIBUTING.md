@@ -15,6 +15,10 @@ If terraform still uses the preinstalled version you can try to move the binary 
 ```bash
 mv terraform-provider-virtualbox ~/.terraform.d/plugins/registry.local/local/virtualbox/5.0.0/linux_amd64/terraform-provider-virtualbox_v5.0.0
 ```
+If you don't want to move the binary all the time you could also use a symbolic link instead:
+```bash
+ln -s terraform-provider-virtualbox ~/.terraform.d/plugins/registry.local/local/virtualbox/5.0.0/linux_amd64/terraform-provider-virtualbox_v5.0.0
+```
 You'll have to change the provider in your terraform configuration too:
 ```terraform
 terraform {
