@@ -1,6 +1,6 @@
 module github.com/terra-farm/terraform-provider-virtualbox
 
-go 1.19
+go 1.20
 
 require (
 	github.com/dustin/go-humanize v1.0.1
