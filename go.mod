@@ -3,7 +3,7 @@ module github.com/terra-farm/terraform-provider-virtualbox
 go 1.19
 
 require (
-	github.com/dustin/go-humanize v1.0.0
+	github.com/dustin/go-humanize v1.0.1
 	github.com/go-test/deep v1.0.8
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/terraform-plugin-log v0.7.0
