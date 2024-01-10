@@ -156,6 +156,12 @@ func resourceVM() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				MaxItems:    4,
 			},
+
+			"firmware": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Flags the EFI custom firmware flag in system settings",
+			},
 		},
 	}
 }
@@ -451,6 +457,11 @@ func resourceVMRead(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		return diag.Errorf("can't set boot_order: %v", err)
 	}
 
+	err = d.Set("firmware", vm.Firmware)
+	if err != nil {
+		return diag.Errorf("can't set firmware: %v", err)
+	}
+
 	return nil
 }
 
@@ -541,6 +552,7 @@ func tfToVbox(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine) err
 	}
 	vm.Memory = uint(bytes / humanize.MiByte) // VirtualBox expect memory to be in MiB units
 
+	vm.Firmware = d.Get("firmware").(string)
 	vm.VRAM = 20 // Always 10MiB for vram
 	vm.Flag = vbox.ACPI | vbox.IOAPIC | vbox.RTCUSEUTC | vbox.PAE |
 		vbox.HWVIRTEX | vbox.NESTEDPAGING | vbox.LARGEPAGES | vbox.LONGMODE |
