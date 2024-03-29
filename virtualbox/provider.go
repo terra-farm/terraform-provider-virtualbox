@@ -10,14 +10,15 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // Provider configuration structure
 type Config struct {
-	Delay   int
-	MinTimeout int
+	ReadyDelay   time.Duration
+	ReadyTimeout time.Duration
 }
 
 func init() {
@@ -31,11 +32,11 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		// Provider configuration
 		Schema: map[string]*schema.Schema{
-			"delay": &schema.Schema{
+			"ready_delay": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
-			"mintimeout": &schema.Schema{
+			"ready_timeout": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
@@ -51,18 +52,18 @@ func Provider() *schema.Provider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := &Config{
-		Delay:   d.Get("delay").(int),
-		MinTimeout: d.Get("mintimeout").(int),
+		ReadyDelay:   time.Duration(d.Get("ready_delay").(int)) * time.Second,
+		ReadyTimeout: time.Duration(d.Get("ready_timeout").(int)) * time.Second,
 	}
 
-	if config.Delay == 0 {
-		log.Printf("[INFO] No Delay was configured, using 60 seconds by default.")
-		config.Delay = 60
+	if config.ReadyDelay == 0 {
+		log.Printf("[INFO] No ready_delay was configured, using 60 seconds by default.")
+		config.ReadyDelay = time.Duration(60) * time.Second
 	}
 
-	if config.MinTimeout == 0 {
-		log.Printf("[INFO] No MinTimeout was configured, using 5 seconds by default.")
-		config.MinTimeout = 5
+	if config.ReadyTimeout == 0 {
+		log.Printf("[INFO] No ready_timeout was configured, using 5 seconds by default.")
+		config.ReadyTimeout = time.Duration(5) * time.Second
 	}
 
 	return config, nil

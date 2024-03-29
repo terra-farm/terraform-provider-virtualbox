@@ -512,7 +512,7 @@ func resourceVMDelete(d *schema.ResourceData, meta interface{}) error {
 
 // Wait until VM is ready, and 'ready' means the first non NAT NIC get a ipv4_address assigned
 func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Machine, meta interface{}) error {
-	
+
 	config := meta.(*Config)
 
 	for i, nic := range vm.NICs {
@@ -528,8 +528,8 @@ func waitUntilVMIsReady(ctx context.Context, d *schema.ResourceData, vm *vbox.Ma
 			[]string{"no"},
 			key,
 			meta,
-			time.Duration(config.Delay)*time.Second, // used to be hardcoded as 30
-			time.Duration(config.MinTimeout)*time.Second, // used to be hardcoded as 1
+			config.ReadyDelay,   // used to be hardcoded as 30
+			config.ReadyTimeout, // used to be hardcoded as 1
 		); err != nil {
 			return errors.Wrapf(err, "waiting for VM (%s) to become ready", d.Get("name"))
 		}

@@ -20,20 +20,23 @@ from a cloud provider.
 terraform {
   required_providers {
     virtualbox = {
-      source = "shekeriev/virtualbox"
-      version = "0.0.4"
+      source = "terra-farm/virtualbox"
+      version = "0.2.1"
     }
   }
 }
 
-provider "virtualbox" {
-  delay      = 60
-  mintimeout = 5
-}
+# In general, you can use the provider without the need to set any configuration options.
+# However, should you want to adjust how long it will wait for a VM to become ready,
+# you can use the following block. Uncomment it and adjust the values (they are in seconds).
+# provider "virtualbox" {
+#   ready_delay   = 60
+#   ready_timeout = 5
+# }
 
 resource "virtualbox_vm" "vm1" {
   name   = "debian-11"
-  image  = "https://app.vagrantup.com/shekeriev/boxes/debian-11/versions/0.2/providers/virtualbox.box"
+  image  = "https://app.vagrantup.com/generic/boxes/debian11/versions/4.3.12/providers/virtualbox/amd64/vagrant.box"
   cpus      = 1
   memory    = "512 mib"
   user_data = file("${path.module}/user_data")
