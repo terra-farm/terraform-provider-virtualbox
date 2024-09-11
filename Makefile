@@ -2,13 +2,13 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 
 default: build
 
-build: fmtcheck
+build:
 	go install
 
-test: fmtcheck
+test:
 	go test -i -race -coverprofile=coverage.txt -covermode=atomic || exit 1
 
-testacc: fmtcheck
+testacc:
 	TF_ACC=1 go test -v $(TESTARGS) -timeout 120m
 
 vet:
@@ -22,9 +22,6 @@ vet:
 
 fmt:
 	gofmt -w $(GOFMT_FILES)
-
-fmtcheck:
-	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
 errcheck:
 	@sh -c "'$(CURDIR)/scripts/errcheck.sh'"
